@@ -1,0 +1,10 @@
+--- zfs-0.6.2/lib/libzfs/Makefile.am.orig	2013-02-04 20:30:34.000000000 +0100
++++ zfs-0.6.2/lib/libzfs/Makefile.am	2013-09-15 11:59:05.031231212 +0200
+@@ -24,6 +24,7 @@
+ libzfs_la_LIBADD = \
+ 	$(top_builddir)/lib/libshare/libshare.la \
+ 	$(top_builddir)/lib/libnvpair/libnvpair.la \
++	$(top_builddir)/lib/libuutil/libuutil.la \
+ 	$(top_builddir)/lib/libzpool/libzpool.la
+ 
+ libzfs_la_LDFLAGS = -lm -ldl -version-info 1:1:0 $(LIBSELINUX)
