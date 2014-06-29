@@ -20,13 +20,13 @@ Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 %define	pname	zfs
 Name:		%{pname}%{_alt_kernel}
-Version:	0.6.2
+Version:	0.6.3
 %define	rel	1
 Release:	%{rel}
 License:	CDDL (ZFS), GPL v2+ (ZPIOS)
 Group:		Applications/System
 Source0:	http://archive.zfsonlinux.org/downloads/zfsonlinux/zfs/%{pname}-%{version}.tar.gz
-# Source0-md5:	0b183b0abdd5be287046ad9ce4f899fd
+# Source0-md5:	5bcc32c122934d421eba68e16826637d
 Patch0:		%{name}-link.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
@@ -34,7 +34,7 @@ BuildRequires:	automake
 BuildRequires:	libtool
 %if %{with kernel}
 %{?with_dist_kernel:BuildRequires:	kernel%{_alt_kernel}-module-build >= 3:2.6.26}
-BuildRequires:	kernel%{_alt_kernel}-spl-devel >= 0.6.2
+BuildRequires:	kernel%{_alt_kernel}-spl-devel >= 0.6.3
 BuildRequires:	rpmbuild(macros) >= 1.379
 %endif
 %if %{with userspace}
@@ -162,6 +162,8 @@ pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.
 	--disable-silent-rules \
 	--with-config="%{?with_kernel:%{?with_userspace:all}}%{!?with_kernel:user}%{!?with_userspace:kernel}" \
 	--with-linux=%{_kernelsrcdir} \
+	--with-systemdunitdir=%{systemdunitdir} \
+	--with-systemdpresetdir=/etc/systemd/system-preset \
 	--with-udevdir=/lib/udev
 
 %{__make} \
@@ -184,8 +186,10 @@ rm -rf $RPM_BUILD_ROOT
 %doc AUTHORS COPYRIGHT DISCLAIMER OPENSOLARIS.LICENSE README.markdown
 %attr(755,root,root) /sbin/mount.zfs
 %attr(755,root,root) %{_bindir}/arcstat.py
+%attr(755,root,root) %{_bindir}/dbufstat.py
 %attr(755,root,root) %{_sbindir}/fsck.zfs
 %attr(755,root,root) %{_sbindir}/zdb
+%attr(755,root,root) %{_sbindir}/zed
 %attr(755,root,root) %{_sbindir}/zfs
 %attr(755,root,root) %{_sbindir}/zhack
 %attr(755,root,root) %{_sbindir}/zinject
@@ -196,12 +200,26 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_sysconfdir}/zfs
 # package *.example as %doc? (they cannot act as default configuration)
 %{_sysconfdir}/zfs/vdev_id.conf.*.example
+%dir %{_sysconfdir}/zfs/zed.d
+%attr(755,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/zfs/zed.d/*.sh
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/zfs/zed.d/zed.rc
 %attr(754,root,root) /etc/rc.d/init.d/zfs
+/usr/lib/modules-load.d/zfs.conf
+/etc/systemd/system-preset/50-zfs.preset
+%{systemdunitdir}/zed.service
+%{systemdunitdir}/zfs.target
+%{systemdunitdir}/zfs-import-cache.service
+%{systemdunitdir}/zfs-import-scan.service
+%{systemdunitdir}/zfs-mount.service
+%{systemdunitdir}/zfs-share.service
 %attr(755,root,root) /lib/udev/vdev_id
 %attr(755,root,root) /lib/udev/zvol_id
 /lib/udev/rules.d/60-zvol.rules
 /lib/udev/rules.d/69-vdev.rules
 /lib/udev/rules.d/90-zfs.rules
+%dir %{_libdir}/zfs
+%dir %{_libdir}/zfs/zed.d
+%attr(755,root,root) %{_libdir}/zfs/zed.d/*.sh
 %dir %{_datadir}/zfs
 %attr(755,root,root) %{_datadir}/zfs/*.sh
 %dir %{_datadir}/zfs/zpios-profile
@@ -214,11 +232,13 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man1/zpios.1*
 %{_mandir}/man1/ztest.1*
 %{_mandir}/man5/vdev_id.conf.5*
+%{_mandir}/man5/zfs-module-parameters.5*
 %{_mandir}/man5/zpool-features.5*
 %{_mandir}/man8/fsck.zfs.8*
 %{_mandir}/man8/mount.zfs.8*
 %{_mandir}/man8/vdev_id.8*
 %{_mandir}/man8/zdb.8*
+%{_mandir}/man8/zed.8*
 %{_mandir}/man8/zfs.8*
 %{_mandir}/man8/zinject.8*
 %{_mandir}/man8/zpool.8*
@@ -231,19 +251,23 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_libdir}/libuutil.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libuutil.so.1
 %attr(755,root,root) %{_libdir}/libzfs.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libzfs.so.1
+%attr(755,root,root) %ghost %{_libdir}/libzfs.so.2
+%attr(755,root,root) %{_libdir}/libzfs_core.so.*.*.*
+%attr(755,root,root) %ghost %{_libdir}/libzfs_core.so.1
 %attr(755,root,root) %{_libdir}/libzpool.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libzpool.so.1
+%attr(755,root,root) %ghost %{_libdir}/libzpool.so.2
 
 %files devel
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_libdir}/libnvpair.so
 %attr(755,root,root) %{_libdir}/libuutil.so
 %attr(755,root,root) %{_libdir}/libzfs.so
+%attr(755,root,root) %{_libdir}/libzfs_core.so
 %attr(755,root,root) %{_libdir}/libzpool.so
 %{_libdir}/libnvpair.la
 %{_libdir}/libuutil.la
 %{_libdir}/libzfs.la
+%{_libdir}/libzfs_core.la
 %{_libdir}/libzpool.la
 %{_includedir}/libspl
 %{_includedir}/libzfs
@@ -253,6 +277,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libnvpair.a
 %{_libdir}/libuutil.a
 %{_libdir}/libzfs.a
+%{_libdir}/libzfs_core.a
 %{_libdir}/libzpool.a
 
 %files -n dracut-zfs
