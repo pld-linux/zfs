@@ -46,6 +46,8 @@ BuildRequires:	zlib-devel
 Requires:	%{pname}-libs = %{version}-%{release}
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
+%define		dracutlibdir	%{_prefix}/lib/dracut
+
 %description
 ZFS is an advanced file system and volume manager which was originally
 developed for Solaris and is now maintained by the Illumos community.
@@ -67,6 +69,7 @@ Summary:	ZFS on Linux libraries
 Summary(pl.UTF-8):	Biblioteki ZFS-a dla Linuksa
 License:	CDDL
 Group:		Libraries
+Requires(post,postun):	/sbin/ldconfig
 
 %description libs
 ZFS on Linux libraries.
@@ -180,6 +183,15 @@ rm -rf $RPM_BUILD_ROOT
 %clean
 rm -rf $RPM_BUILD_ROOT
 
+%post	-n kernel%{_alt_kernel}-zfs
+%depmod %{_kernel_ver}
+
+%postun	-n kernel%{_alt_kernel}-zfs
+%depmod %{_kernel_ver}
+
+%post	libs -p /sbin/ldconfig
+%postun	libs -p /sbin/ldconfig
+
 %if %{with userspace}
 %files
 %defattr(644,root,root,755)
@@ -283,10 +295,10 @@ rm -rf $RPM_BUILD_ROOT
 %files -n dracut-zfs
 %defattr(644,root,root,755)
 %doc dracut/README.dracut.markdown
-%dir %{_libdir}/dracut/modules.d/90zfs
-%attr(755,root,root) %{_libdir}/dracut/modules.d/90zfs/module-setup.sh
-%attr(755,root,root) %{_libdir}/dracut/modules.d/90zfs/mount-zfs.sh
-%attr(755,root,root) %{_libdir}/dracut/modules.d/90zfs/parse-zfs.sh
+%dir %{dracutlibdir}/modules.d/90zfs
+%attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/module-setup.sh
+%attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/mount-zfs.sh
+%attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/parse-zfs.sh
 %endif
 
 %if %{with kernel}
