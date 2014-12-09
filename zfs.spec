@@ -389,6 +389,7 @@ rm -rf $RPM_BUILD_ROOT
 %if %{with kernel}
 %files -n kernel-zfs-common-devel
 %defattr(644,root,root,755)
+%dir /usr/src/zfs-%{version}
 /usr/src/zfs-%{version}/include
 /usr/src/zfs-%{version}/zfs.release.in
 /usr/src/zfs-%{version}/zfs_config.h.in
