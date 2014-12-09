@@ -9,33 +9,58 @@
 %if %{without kernel}
 %undefine	with_dist_kernel
 %endif
-%if "%{_alt_kernel}" != "%{nil}"
-%undefine	with_userspace
+
+# The goal here is to have main, userspace, package built once with
+# simple release number, and only rebuild kernel packages with kernel
+# version as part of release number, without the need to bump release
+# with every kernel change.
+%if 0%{?_pld_builder:1} && %{with kernel} && %{with userspace}
+%{error:kernel and userspace cannot be built at the same time on PLD builders}
+exit 1
 %endif
+
+%if "%{_alt_kernel}" != "%{nil}"
+%if 0%{?build_kernels:1}
+%{error:alt_kernel and build_kernels are mutually exclusive}
+exit 1
+%endif
+%undefine	with_userspace
+%global		_build_kernels		%{alt_kernel}
+%else
+%global		_build_kernels		%{?build_kernels:,%{?build_kernels}}
+%endif
+
 %if %{without userspace}
 # nothing to be placed to debuginfo package
 %define		_enable_debug_packages	0
 %endif
+
+%define		_duplicate_files_terminate_build	0
+
+%define		kbrs	%(echo %{_build_kernels} | tr , '\\n' | while read n ; do echo %%undefine alt_kernel ; [ -z "$n" ] || echo %%define alt_kernel $n ; echo "BuildRequires:kernel%%{_alt_kernel}-module-build >= 3:2.6.20.2" ; done)
+%define		kpkg	%(echo %{_build_kernels} | tr , '\\n' | while read n ; do echo %%undefine alt_kernel ; [ -z "$n" ] || echo %%define alt_kernel $n ; echo %%kernel_pkg ; done)
+%define		bkpkg	%(echo %{_build_kernels} | tr , '\\n' | while read n ; do echo %%undefine alt_kernel ; [ -z "$n" ] || echo %%define alt_kernel $n ; echo %%build_kernel_pkg ; done)
+
+%define	pname	zfs
+%define	rel	1
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
-%define	pname	zfs
-Name:		%{pname}%{_alt_kernel}
+Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
 Version:	0.6.3
-%define	rel	1
-Release:	%{rel}
+Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL (ZFS), GPL v2+ (ZPIOS)
 Group:		Applications/System
 Source0:	http://archive.zfsonlinux.org/downloads/zfsonlinux/zfs/%{pname}-%{version}.tar.gz
 # Source0-md5:	5bcc32c122934d421eba68e16826637d
-Patch0:		%{name}-link.patch
+Patch0:		%{pname}-link.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
 BuildRequires:	libtool
 %if %{with kernel}
-%{?with_dist_kernel:BuildRequires:	kernel%{_alt_kernel}-module-build >= 3:2.6.26}
 BuildRequires:	kernel%{_alt_kernel}-spl-devel >= 0.6.3
 BuildRequires:	rpmbuild(macros) >= 1.379
+%{?with_dist_kernel:%{expand:%kbrs}}
 %endif
 %if %{with userspace}
 BuildRequires:	libblkid-devel
@@ -119,40 +144,96 @@ ZFS support for Dracut.
 %description -n dracut-zfs -l pl.UTF-8
 Obsługa ZFS-a dla Dracuta.
 
-%package -n kernel%{_alt_kernel}-zfs
-Summary:	ZFS Linux kernel modules
-Summary(pl.UTF-8):	ZFS - moduły jądra Linuksa
-Release:	%{rel}@%{_kernel_ver_str}
-Group:		Base/Kernel
-Requires(post,postun):	/sbin/depmod
-%if %{with dist_kernel}
-%requires_releq_kernel
-Requires(postun):	%releq_kernel
-%endif
-
-%description -n kernel%{_alt_kernel}-zfs
-ZFS Linux kernel modules.
-
-%description -n kernel%{_alt_kernel}-zfs -l pl.UTF-8
-ZFS - moduły jądra Linuksa.
-
-%package -n kernel%{_alt_kernel}-zfs-devel
+%package -n kernel-zfs-common-devel
 Summary:	ZFS Linux kernel headers
 Summary(pl.UTF-8):	ZFS - pliki nagłówkowe jądra Linuksa
-Release:	%{rel}@%{_kernel_ver_str}
 Group:		Development/Building
-%{?with_dist_kernel:Requires:	kernel%{_alt_kernel}-headers}
 
-%description -n kernel%{_alt_kernel}-zfs-devel
-ZFS Linux kernel headers configured for PLD kernel%{_alt_kernel},
-version %{_kernel_ver}.
+%description -n kernel-zfs-common-devel
+ZFS Linux kernel headers common for all PLD kernel versions.
 
-%description -n kernel%{_alt_kernel}-zfs-devel -l pl.UTF-8
-ZFS - pliki nagłówkowe jądra Linuksa skonfigurowane dla jądra PLD z
-pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.
+%description -n kernel-zfs-common-devel -l pl.UTF-8
+ZFS - pliki nagłówkowe jądra Linuksa wspólne na wszystkich
+wersji jąder PLD.
+
+%define	kernel_pkg()\
+%package -n kernel%{_alt_kernel}-zfs\
+Summary:	ZFS Linux kernel modules\
+Summary(pl.UTF-8):	ZFS - moduły jądra Linuksa\
+Release:	%{rel}@%{_kernel_ver_str}\
+Group:		Base/Kernel\
+Requires(post,postun):	/sbin/depmod\
+%if %{with dist_kernel}\
+%requires_releq_kernel\
+Requires(postun):	%releq_kernel\
+%endif\
+\
+%description -n kernel%{_alt_kernel}-zfs\
+ZFS Linux kernel modules.\
+\
+%description -n kernel%{_alt_kernel}-zfs -l pl.UTF-8\
+ZFS - moduły jądra Linuksa.\
+\
+%package -n kernel%{_alt_kernel}-zfs-devel\
+Summary:	ZFS Linux kernel headers\
+Summary(pl.UTF-8):	ZFS - pliki nagłówkowe jądra Linuksa\
+Release:	%{rel}@%{_kernel_ver_str}\
+Group:		Development/Building\
+%if %{with dist_kernel}\
+Requires:	kernel%{_alt_kernel}-headers\
+Requires:	kernel-zfs-common-devel\
+%endif\
+\
+%description -n kernel%{_alt_kernel}-zfs-devel\
+ZFS Linux kernel headers configured for PLD kernel%{_alt_kernel},\
+version %{_kernel_ver}.\
+\
+%description -n kernel%{_alt_kernel}-zfs-devel -l pl.UTF-8\
+ZFS - pliki nagłówkowe jądra Linuksa skonfigurowane dla jądra PLD z\
+pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.\
+\
+%files -n kernel%{_alt_kernel}-zfs\
+%defattr(644,root,root,755)\
+%dir /lib/modules/%{_kernel_ver}/misc/avl\
+/lib/modules/%{_kernel_ver}/misc/avl/zavl.ko*\
+%dir /lib/modules/%{_kernel_ver}/misc/nvpair\
+/lib/modules/%{_kernel_ver}/misc/nvpair/znvpair.ko*\
+%dir /lib/modules/%{_kernel_ver}/misc/unicode\
+/lib/modules/%{_kernel_ver}/misc/unicode/zunicode.ko*\
+%dir /lib/modules/%{_kernel_ver}/misc/zcommon\
+/lib/modules/%{_kernel_ver}/misc/zcommon/zcommon.ko*\
+%dir /lib/modules/%{_kernel_ver}/misc/zfs\
+/lib/modules/%{_kernel_ver}/misc/zfs/zfs.ko*\
+%dir /lib/modules/%{_kernel_ver}/misc/zpios\
+/lib/modules/%{_kernel_ver}/misc/zpios/zpios.ko*\
+\
+%files -n kernel%{_alt_kernel}-zfs-devel\
+%defattr(644,root,root,755)\
+/usr/src/zfs-%{version}/%{_kernel_ver}\
+\
+%post	-n kernel%{_alt_kernel}-zfs\
+%depmod %{_kernel_ver}\
+\
+%postun	-n kernel%{_alt_kernel}-zfs\
+%depmod %{_kernel_ver}\
+%{nil}
+
+%define build_kernel_pkg()\
+%configure \\\
+	--disable-silent-rules \\\
+	--with-config="kernel" \\\
+	--with-linux=%{_kernelsrcdir}\
+\
+%{__make} clean\
+%{__make} %{?with_verbose:V=1}\
+p=`pwd`\
+%{__make} install DESTDIR=$p/installed INSTALL_MOD_DIR=misc\
+%{nil}
+
+%{?with_kernel:%{expand:%kpkg}}
 
 %prep
-%setup -q
+%setup -q -n %{pname}-%{version}
 %patch0 -p1
 
 %build
@@ -161,9 +242,12 @@ pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.
 %{__autoconf}
 %{__autoheader}
 %{__automake}
+%{?with_kernel:%{expand:%bkpkg}}
+
+%if %{with userspace}
 %configure \
 	--disable-silent-rules \
-	--with-config="%{?with_kernel:%{?with_userspace:all}}%{!?with_kernel:user}%{!?with_userspace:kernel}" \
+	--with-config="user" \
 	--with-linux=%{_kernelsrcdir} \
 	--with-systemdunitdir=%{systemdunitdir} \
 	--with-systemdpresetdir=/etc/systemd/system-preset \
@@ -171,23 +255,24 @@ pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.
 
 %{__make} \
 	%{?with_verbose:V=1}
+%endif
 
 %install
 rm -rf $RPM_BUILD_ROOT
 
+%if %{with kernel}
+install -d $RPM_BUILD_ROOT
+cp -a installed/* $RPM_BUILD_ROOT
+%endif
+
+%if %{with userspace}
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT \
-	DEFAULT_INIT_DIR=/etc/rc.d/init.d \
-	INSTALL_MOD_DIR=misc
+	DEFAULT_INIT_DIR=/etc/rc.d/init.d
+%endif
 
 %clean
 rm -rf $RPM_BUILD_ROOT
-
-%post	-n kernel%{_alt_kernel}-zfs
-%depmod %{_kernel_ver}
-
-%postun	-n kernel%{_alt_kernel}-zfs
-%depmod %{_kernel_ver}
 
 %post	libs -p /sbin/ldconfig
 %postun	libs -p /sbin/ldconfig
@@ -302,22 +387,9 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %if %{with kernel}
-%files -n kernel%{_alt_kernel}-zfs
+%files -n kernel-zfs-common-devel
 %defattr(644,root,root,755)
-%dir /lib/modules/%{_kernel_ver}/misc/avl
-/lib/modules/%{_kernel_ver}/misc/avl/zavl.ko*
-%dir /lib/modules/%{_kernel_ver}/misc/nvpair
-/lib/modules/%{_kernel_ver}/misc/nvpair/znvpair.ko*
-%dir /lib/modules/%{_kernel_ver}/misc/unicode
-/lib/modules/%{_kernel_ver}/misc/unicode/zunicode.ko*
-%dir /lib/modules/%{_kernel_ver}/misc/zcommon
-/lib/modules/%{_kernel_ver}/misc/zcommon/zcommon.ko*
-%dir /lib/modules/%{_kernel_ver}/misc/zfs
-/lib/modules/%{_kernel_ver}/misc/zfs/zfs.ko*
-%dir /lib/modules/%{_kernel_ver}/misc/zpios
-/lib/modules/%{_kernel_ver}/misc/zpios/zpios.ko*
-
-%files -n kernel%{_alt_kernel}-zfs-devel
-%defattr(644,root,root,755)
-/usr/src/zfs-%{version}
+/usr/src/zfs-%{version}/include
+/usr/src/zfs-%{version}/zfs.release.in
+/usr/src/zfs-%{version}/zfs_config.h.in
 %endif
