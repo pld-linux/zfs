@@ -37,7 +37,7 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define		kbrs	%(echo %{_build_kernels} | tr , '\\n' | while read n ; do echo %%undefine alt_kernel ; [ -z "$n" ] || echo %%define alt_kernel $n ; echo "BuildRequires:kernel%%{_alt_kernel}-module-build >= 3:2.6.20.2" ; done)
+%define		kbrs	%(echo %{_build_kernels} | tr , '\\n' | while read n ; do echo %%undefine alt_kernel ; [ -z "$n" ] || echo %%define alt_kernel $n ; echo -e "BuildRequires:kernel%%{_alt_kernel}-module-build >= 3:2.6.20.2\nBuildRequires:kernel%{_alt_kernel}-spl-devel >= 0.6.3" ; done)
 %define		kpkg	%(echo %{_build_kernels} | tr , '\\n' | while read n ; do echo %%undefine alt_kernel ; [ -z "$n" ] || echo %%define alt_kernel $n ; echo %%kernel_pkg ; done)
 %define		bkpkg	%(echo %{_build_kernels} | tr , '\\n' | while read n ; do echo %%undefine alt_kernel ; [ -z "$n" ] || echo %%define alt_kernel $n ; echo %%build_kernel_pkg ; done)
 
@@ -58,7 +58,6 @@ BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
 BuildRequires:	libtool
 %if %{with kernel}
-BuildRequires:	kernel%{_alt_kernel}-spl-devel >= 0.6.3
 BuildRequires:	rpmbuild(macros) >= 1.379
 %{?with_dist_kernel:%{expand:%kbrs}}
 %endif
