@@ -42,7 +42,7 @@ exit 1
 %define		bkpkg	%(echo %{_build_kernels} | tr , '\\n' | while read n ; do echo %%undefine alt_kernel ; [ -z "$n" ] || echo %%define alt_kernel $n ; echo %%build_kernel_pkg ; done)
 
 %define	pname	zfs
-%define	rel	3
+%define	rel	4
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
@@ -53,6 +53,7 @@ Group:		Applications/System
 Source0:	http://archive.zfsonlinux.org/downloads/zfsonlinux/zfs/%{pname}-%{version}.tar.gz
 # Source0-md5:	5bcc32c122934d421eba68e16826637d
 Patch0:		%{pname}-link.patch
+Patch1:		linux-3.18.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -234,6 +235,7 @@ p=`pwd`\
 %prep
 %setup -q -n %{pname}-%{version}
 %patch0 -p1
+%patch1 -p1
 
 %build
 %{__libtoolize}
