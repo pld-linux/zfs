@@ -22,7 +22,7 @@ exit 1
 %define		_duplicate_files_terminate_build	0
 
 %define	pname	zfs
-%define	rel	4
+%define	rel	5
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
