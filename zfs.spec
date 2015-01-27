@@ -1,15 +1,10 @@
 # TODO: PLDify init script
 #
 # Conditional build:
-%bcond_without	dist_kernel	# allow non-distribution kernel
 %bcond_without	kernel		# don't build kernel modules
 %bcond_without	userspace	# don't build userspace programs
 %bcond_with	verbose		# verbose build (V=1)
 #
-%if %{without kernel}
-%undefine	with_dist_kernel
-%endif
-
 # The goal here is to have main, userspace, package built once with
 # simple release number, and only rebuild kernel packages with kernel
 # version as part of release number, without the need to bump release
@@ -58,10 +53,8 @@ URL:		http://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
 BuildRequires:	libtool
-%if %{with kernel}
-BuildRequires:	rpmbuild(macros) >= 1.379
-%{?with_dist_kernel:%{expand:%kbrs}}
-%endif
+BuildRequires:	rpmbuild(macros) >= 1.701
+%{?with_kernel:%{expand:%kbrs}}
 %if %{with userspace}
 BuildRequires:	libblkid-devel
 BuildRequires:	libselinux-devel
@@ -163,10 +156,8 @@ Summary(pl.UTF-8):	ZFS - moduły jądra Linuksa\
 Release:	%{rel}@%{_kernel_ver_str}\
 Group:		Base/Kernel\
 Requires(post,postun):	/sbin/depmod\
-%if %{with dist_kernel}\
 %requires_releq_kernel\
 Requires(postun):	%releq_kernel\
-%endif\
 \
 %description -n kernel%{_alt_kernel}-zfs\
 ZFS Linux kernel modules.\
@@ -179,10 +170,8 @@ Summary:	ZFS Linux kernel headers\
 Summary(pl.UTF-8):	ZFS - pliki nagłówkowe jądra Linuksa\
 Release:	%{rel}@%{_kernel_ver_str}\
 Group:		Development/Building\
-%if %{with dist_kernel}\
 Requires:	kernel%{_alt_kernel}-headers\
 Requires:	kernel-zfs-common-devel\
-%endif\
 \
 %description -n kernel%{_alt_kernel}-zfs-devel\
 ZFS Linux kernel headers configured for PLD kernel%{_alt_kernel},\
