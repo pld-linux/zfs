@@ -34,6 +34,7 @@ Source0:	http://archive.zfsonlinux.org/downloads/zfsonlinux/zfs/%{pname}-%{versi
 # Source0-md5:	5bcc32c122934d421eba68e16826637d
 Patch0:		%{pname}-link.patch
 Patch1:		linux-3.18.patch
+Patch2:		x32.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -213,6 +214,7 @@ p=`pwd`\
 %setup -q -n %{pname}-%{version}
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 %build
 %{__libtoolize}
