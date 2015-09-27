@@ -22,21 +22,18 @@ exit 1
 %define		_duplicate_files_terminate_build	0
 
 %define	pname	zfs
-%define	rel	8
+%define	rel	1
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	0.6.3
+Version:	0.6.5.1
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL (ZFS), GPL v2+ (ZPIOS)
 Group:		Applications/System
 Source0:	http://archive.zfsonlinux.org/downloads/zfsonlinux/zfs/%{pname}-%{version}.tar.gz
-# Source0-md5:	5bcc32c122934d421eba68e16826637d
+# Source0-md5:	0421551f728c1fd4239bdd9932ba2c52
 Patch0:		%{pname}-link.patch
-Patch1:		linux-3.18.patch
-Patch2:		x32.patch
-Patch3:		linux-3.19.patch
-Patch4:		linux-4.0.patch
+Patch1:		x32.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -216,9 +213,6 @@ p=`pwd`\
 %setup -q -n %{pname}-%{version}
 %patch0 -p1
 %patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
 
 %build
 %{__libtoolize}
@@ -253,6 +247,9 @@ cp -a installed/* $RPM_BUILD_ROOT
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT \
 	DEFAULT_INIT_DIR=/etc/rc.d/init.d
+
+install -d $RPM_BUILD_ROOT%{_pkgconfigdir}
+%{__mv} $RPM_BUILD_ROOT%{_npkgconfigdir}/* $RPM_BUILD_ROOT%{_pkgconfigdir}
 %endif
 
 %clean
@@ -266,6 +263,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644,root,root,755)
 %doc AUTHORS COPYRIGHT DISCLAIMER OPENSOLARIS.LICENSE README.markdown
 %attr(755,root,root) /sbin/mount.zfs
+%attr(755,root,root) %{_bindir}/arc_summary.py
 %attr(755,root,root) %{_bindir}/arcstat.py
 %attr(755,root,root) %{_bindir}/dbufstat.py
 %attr(755,root,root) %{_sbindir}/fsck.zfs
@@ -284,7 +282,12 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_sysconfdir}/zfs/zed.d
 %attr(755,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/zfs/zed.d/*.sh
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/zfs/zed.d/zed.rc
-%attr(754,root,root) /etc/rc.d/init.d/zfs
+%attr(754,root,root) /etc/rc.d/init.d/zfs-import
+%attr(754,root,root) /etc/rc.d/init.d/zfs-mount
+%attr(754,root,root) /etc/rc.d/init.d/zfs-share
+%attr(754,root,root) /etc/rc.d/init.d/zfs-zed
+%config(noreplace) %verify(not md5 mtime size) /etc/default/zfs
+/etc/zfs/zfs-functions
 /usr/lib/modules-load.d/zfs.conf
 /etc/systemd/system-preset/50-zfs.preset
 %{systemdunitdir}/zed.service
@@ -313,6 +316,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man1/zpios.1*
 %{_mandir}/man1/ztest.1*
 %{_mandir}/man5/vdev_id.conf.5*
+%{_mandir}/man5/zfs-events.5*
 %{_mandir}/man5/zfs-module-parameters.5*
 %{_mandir}/man5/zpool-features.5*
 %{_mandir}/man8/fsck.zfs.8*
@@ -352,6 +356,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libzpool.la
 %{_includedir}/libspl
 %{_includedir}/libzfs
+%{_pkgconfigdir}/libzfs.pc
+%{_pkgconfigdir}/libzfs_core.pc
 
 %files static
 %defattr(644,root,root,755)
@@ -363,11 +369,13 @@ rm -rf $RPM_BUILD_ROOT
 
 %files -n dracut-zfs
 %defattr(644,root,root,755)
-%doc dracut/README.dracut.markdown
+%doc contrib/dracut/README.dracut.markdown
 %dir %{dracutlibdir}/modules.d/90zfs
+%attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/export-zfs.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/module-setup.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/mount-zfs.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/parse-zfs.sh
+%attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-lib.sh
 %endif
 
 %if %{with kernel}
