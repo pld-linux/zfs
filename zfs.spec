@@ -1,4 +1,9 @@
-# TODO: PLDify init script
+# TODO:
+# - PLDify init script
+# - unpackaged initramfs-tools support:
+#   /usr/share/initramfs-tools/conf-hooks.d/zfs
+#   /usr/share/initramfs-tools/hooks/zfs
+#   /usr/share/initramfs-tools/scripts/zfs
 #
 # Conditional build:
 %bcond_without	kernel		# don't build kernel modules
