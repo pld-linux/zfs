@@ -31,12 +31,12 @@ exit 1
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	0.6.5.6
+Version:	0.6.5.7
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL (ZFS), GPL v2+ (ZPIOS)
 Group:		Applications/System
 Source0:	http://archive.zfsonlinux.org/downloads/zfsonlinux/zfs/%{pname}-%{version}.tar.gz
-# Source0-md5:	8c05b3cfcb0c25b1469032404ec032fe
+# Source0-md5:	b470c0426da6e1e3513f5166c907218d
 Patch0:		%{pname}-link.patch
 Patch1:		x32.patch
 URL:		http://zfsonlinux.org/
