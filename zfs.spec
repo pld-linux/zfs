@@ -26,7 +26,7 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	1
+%define	rel	2
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
@@ -296,12 +296,12 @@ rm -rf $RPM_BUILD_ROOT
 /etc/zfs/zfs-functions
 /usr/lib/modules-load.d/zfs.conf
 /etc/systemd/system-preset/50-zfs.preset
-%{systemdunitdir}/zed.service
 %{systemdunitdir}/zfs.target
 %{systemdunitdir}/zfs-import-cache.service
 %{systemdunitdir}/zfs-import-scan.service
 %{systemdunitdir}/zfs-mount.service
 %{systemdunitdir}/zfs-share.service
+%{systemdunitdir}/zfs-zed.service
 %attr(755,root,root) /lib/udev/vdev_id
 %attr(755,root,root) /lib/udev/zvol_id
 /lib/udev/rules.d/60-zvol.rules
