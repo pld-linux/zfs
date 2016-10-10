@@ -26,20 +26,19 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	2
+%define	rel	1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	0.6.5.7
+Version:	0.6.5.8
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL (ZFS), GPL v2+ (ZPIOS)
 Group:		Applications/System
-Source0:	http://archive.zfsonlinux.org/downloads/zfsonlinux/zfs/%{pname}-%{version}.tar.gz
-# Source0-md5:	b470c0426da6e1e3513f5166c907218d
+Source0:	https://github.com/zfsonlinux/zfs/releases/download/zfs-%{version}/%{name}-%{version}.tar.gz
+# Source0-md5:	ffc51dcf5260d3c7e747fe78f8ae307c
 Patch0:		%{pname}-link.patch
 Patch1:		x32.patch
-Patch2:		linux-4.7.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -220,7 +219,6 @@ p=`pwd`\
 %setup -q -n %{pname}-%{version}
 %patch0 -p1
 %patch1 -p1
-%patch2 -p1
 
 %build
 %{__libtoolize}
