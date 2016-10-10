@@ -35,7 +35,7 @@ Version:	0.6.5.8
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL (ZFS), GPL v2+ (ZPIOS)
 Group:		Applications/System
-Source0:	https://github.com/zfsonlinux/zfs/releases/download/zfs-%{version}/%{name}-%{version}.tar.gz
+Source0:	https://github.com/zfsonlinux/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
 # Source0-md5:	ffc51dcf5260d3c7e747fe78f8ae307c
 Patch0:		%{pname}-link.patch
 Patch1:		x32.patch
