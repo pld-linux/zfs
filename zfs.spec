@@ -26,7 +26,7 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	2
+%define	rel	3
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
@@ -39,6 +39,7 @@ Source0:	https://github.com/zfsonlinux/zfs/releases/download/zfs-%{version}/%{pn
 # Source0-md5:	ffc51dcf5260d3c7e747fe78f8ae307c
 Patch0:		%{pname}-link.patch
 Patch1:		x32.patch
+Patch2:		setattr_prepare.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
