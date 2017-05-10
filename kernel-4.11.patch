@@ -1,0 +1,391 @@
+From 4859fe796c5b03687a7b2ab3735b882c4f5cad66 Mon Sep 17 00:00:00 2001
+From: Olaf Faaland <faaland1@llnl.gov>
+Date: Tue, 28 Feb 2017 16:10:18 -0800
+Subject: [PATCH] Linux 4.11 compat: avoid refcount_t name conflict
+
+Linux 4.11 introduces a new type, refcount_t, which conflicts with the
+type of the same name defined within ZFS.
+
+Rename the ZFS type zfs_refcount_t.  Within the ZFS code, use a macro to
+cause references to refcount_t to be changed to zfs_refcount_t at
+compile time.  This reduces conflicts when later landing OpenZFS
+patches.
+
+Reviewed-by: George Melikov <mail@gmelikov.ru>
+Reviewed-by: Giuseppe Di Natale <dinatale2@llnl.gov>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Olaf Faaland <faaland1@llnl.gov>
+Closes #5823
+Closes #5842
+---
+ include/sys/refcount.h | 17 ++++++++++++++---
+ module/zfs/refcount.c  |  2 +-
+ 2 files changed, 15 insertions(+), 4 deletions(-)
+
+diff --git a/include/sys/refcount.h b/include/sys/refcount.h
+index 3f50cdd..a96220b 100644
+--- a/include/sys/refcount.h
++++ b/include/sys/refcount.h
+@@ -41,6 +41,17 @@ extern "C" {
+  */
+ #define	FTAG ((char *)__func__)
+ 
++/*
++ * Starting with 4.11, torvalds/linux@f405df5, the linux kernel defines a
++ * refcount_t type of its own.  The macro below effectively changes references
++ * in the ZFS code from refcount_t to zfs_refcount_t at compile time, so that
++ * existing code need not be altered, reducing conflicts when landing openZFS
++ * patches.
++ */
++
++#define	refcount_t	zfs_refcount_t
++#define	refcount_add	zfs_refcount_add
++
+ #ifdef	ZFS_DEBUG
+ typedef struct reference {
+ 	list_node_t ref_link;
+@@ -56,7 +67,7 @@ typedef struct refcount {
+ 	list_t rc_removed;
+ 	int64_t rc_count;
+ 	int64_t rc_removed_count;
+-} refcount_t;
++} zfs_refcount_t;
+ 
+ /* Note: refcount_t must be initialized with refcount_create[_untracked]() */
+ 
+@@ -67,7 +78,7 @@ void refcount_destroy(refcount_t *rc);
+ void refcount_destroy_many(refcount_t *rc, uint64_t number);
+ int refcount_is_zero(refcount_t *rc);
+ int64_t refcount_count(refcount_t *rc);
+-int64_t refcount_add(refcount_t *rc, void *holder_tag);
++int64_t zfs_refcount_add(refcount_t *rc, void *holder_tag);
+ int64_t refcount_remove(refcount_t *rc, void *holder_tag);
+ int64_t refcount_add_many(refcount_t *rc, uint64_t number, void *holder_tag);
+ int64_t refcount_remove_many(refcount_t *rc, uint64_t number, void *holder_tag);
+@@ -92,7 +103,7 @@ typedef struct refcount {
+ #define	refcount_destroy_many(rc, number) ((rc)->rc_count = 0)
+ #define	refcount_is_zero(rc) ((rc)->rc_count == 0)
+ #define	refcount_count(rc) ((rc)->rc_count)
+-#define	refcount_add(rc, holder) atomic_add_64_nv(&(rc)->rc_count, 1)
++#define	zfs_refcount_add(rc, holder) atomic_add_64_nv(&(rc)->rc_count, 1)
+ #define	refcount_remove(rc, holder) atomic_add_64_nv(&(rc)->rc_count, -1)
+ #define	refcount_add_many(rc, number, holder) \
+ 	atomic_add_64_nv(&(rc)->rc_count, number)
+diff --git a/module/zfs/refcount.c b/module/zfs/refcount.c
+index b338747..a151ace 100644
+--- a/module/zfs/refcount.c
++++ b/module/zfs/refcount.c
+@@ -143,7 +143,7 @@ refcount_add_many(refcount_t *rc, uint64_t number, void *holder)
+ }
+ 
+ int64_t
+-refcount_add(refcount_t *rc, void *holder)
++zfs_refcount_add(refcount_t *rc, void *holder)
+ {
+ 	return (refcount_add_many(rc, 1, holder));
+ }
+From a3478c074752610814f894375c3d947ece4938fe Mon Sep 17 00:00:00 2001
+From: Olaf Faaland <faaland1@llnl.gov>
+Date: Mon, 20 Mar 2017 17:51:16 -0700
+Subject: [PATCH] Linux 4.11 compat: iops.getattr and friends
+
+In torvalds/linux@a528d35, there are changes to the getattr family of functions,
+struct kstat, and the interface of inode_operations .getattr.
+
+The inode_operations .getattr and simple_getattr() interface changed to:
+
+int (*getattr) (const struct path *, struct dentry *, struct kstat *,
+    u32 request_mask, unsigned int query_flags)
+
+The request_mask argument indicates which field(s) the caller intends to use.
+Fields the caller has not specified via request_mask may be set in the returned
+struct anyway, but their values may be approximate.
+
+The query_flags argument indicates whether the filesystem must update
+the attributes from the backing store.
+
+Currently both fields are ignored.  It is possible that getattr-related
+functions within zfs could be optimized based on the request_mask.
+
+struct kstat includes new fields:
+u32               result_mask;  /* What fields the user got */
+u64               attributes;   /* See STATX_ATTR_* flags */
+struct timespec   btime;        /* File creation time */
+
+Fields attribute and btime are cleared; the result_mask reflects this.  These
+appear to be optional based on simple_getattr() and vfs_getattr() within the
+kernel, which take the same approach.
+
+Reviewed-by: Chunwei Chen <david.chen@osnexus.com>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Olaf Faaland <faaland1@llnl.gov>
+Closes #5875
+---
+ config/kernel-inode-getattr.m4 | 67 ++++++++++++++++++++++++++++++++++++++++++
+ config/kernel.m4               |  1 +
+ include/linux/vfs_compat.h     | 43 +++++++++++++++++++++++++++
+ module/zfs/zpl_ctldir.c        | 35 +++++++++++-----------
+ module/zfs/zpl_inode.c         | 11 +++++--
+ 5 files changed, 138 insertions(+), 19 deletions(-)
+ create mode 100644 config/kernel-inode-getattr.m4
+
+diff --git a/config/kernel-inode-getattr.m4 b/config/kernel-inode-getattr.m4
+new file mode 100644
+index 0000000..f10e0b2
+--- /dev/null
++++ b/config/kernel-inode-getattr.m4
+@@ -0,0 +1,67 @@
++dnl #
++dnl # Linux 4.11 API
++dnl # See torvalds/linux@a528d35
++dnl #
++AC_DEFUN([ZFS_AC_PATH_KERNEL_IOPS_GETATTR], [
++	AC_MSG_CHECKING([whether iops->getattr() takes a path])
++	ZFS_LINUX_TRY_COMPILE([
++		#include <linux/fs.h>
++
++		int test_getattr(
++		    const struct path *p, struct kstat *k,
++		    u32 request_mask, unsigned int query_flags)
++		    { return 0; }
++
++		static const struct inode_operations
++		    iops __attribute__ ((unused)) = {
++			.getattr = test_getattr,
++		};
++	],[
++	],[
++		AC_MSG_RESULT(yes)
++		AC_DEFINE(HAVE_PATH_IOPS_GETATTR, 1,
++		    [iops->getattr() takes a path])
++	],[
++		AC_MSG_RESULT(no)
++	])
++])
++
++
++
++dnl #
++dnl # Linux 3.9 - 4.10 API
++dnl #
++AC_DEFUN([ZFS_AC_VFSMOUNT_KERNEL_IOPS_GETATTR], [
++	AC_MSG_CHECKING([whether iops->getattr() takes a vfsmount])
++	ZFS_LINUX_TRY_COMPILE([
++		#include <linux/fs.h>
++
++		int test_getattr(
++		    struct vfsmount *mnt, struct dentry *d,
++		    struct kstat *k)
++		    { return 0; }
++
++		static const struct inode_operations
++		    iops __attribute__ ((unused)) = {
++			.getattr = test_getattr,
++		};
++	],[
++	],[
++		AC_MSG_RESULT(yes)
++		AC_DEFINE(HAVE_VFSMOUNT_IOPS_GETATTR, 1,
++		    [iops->getattr() takes a vfsmount])
++	],[
++		AC_MSG_RESULT(no)
++	])
++])
++
++
++dnl #
++dnl # The interface of the getattr callback from the inode_operations
++dnl # structure changed.  Also, the interface of the simple_getattr()
++dnl # function provided by the kernel changed.
++dnl #
++AC_DEFUN([ZFS_AC_KERNEL_INODE_OPERATIONS_GETATTR], [
++	ZFS_AC_PATH_KERNEL_IOPS_GETATTR
++	ZFS_AC_VFSMOUNT_KERNEL_IOPS_GETATTR
++])
+diff --git a/config/kernel.m4 b/config/kernel.m4
+index 0b50a54..25271ce 100644
+--- a/config/kernel.m4
++++ b/config/kernel.m4
+@@ -59,6 +59,7 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
+ 	ZFS_AC_KERNEL_INODE_OPERATIONS_CHECK_ACL_WITH_FLAGS
+ 	ZFS_AC_KERNEL_INODE_OPERATIONS_GET_ACL
+ 	ZFS_AC_KERNEL_INODE_OPERATIONS_SET_ACL
++	ZFS_AC_KERNEL_INODE_OPERATIONS_GETATTR
+ 	ZFS_AC_KERNEL_GET_ACL_HANDLE_CACHE
+ 	ZFS_AC_KERNEL_SHOW_OPTIONS
+ 	ZFS_AC_KERNEL_FILE_INODE
+diff --git a/include/linux/vfs_compat.h b/include/linux/vfs_compat.h
+index baa2980..cd22b52 100644
+--- a/include/linux/vfs_compat.h
++++ b/include/linux/vfs_compat.h
+@@ -454,4 +454,47 @@ setattr_prepare(struct dentry *dentry, struct iattr *ia)
+ }
+ #endif
+ 
++/*
++ * 4.11 API change
++ * These macros are defined by kernel 4.11.  We define them so that the same
++ * code builds under kernels < 4.11 and >= 4.11.  The macros are set to 0 so
++ * that it will create obvious failures if they are accidentally used when built
++ * against a kernel >= 4.11.
++ */
++
++#ifndef STATX_BASIC_STATS
++#define	STATX_BASIC_STATS	0
++#endif
++
++#ifndef AT_STATX_SYNC_AS_STAT
++#define	AT_STATX_SYNC_AS_STAT	0
++#endif
++
++/*
++ * 4.11 API change
++ * 4.11 takes struct path *, < 4.11 takes vfsmount *
++ */
++
++#ifdef HAVE_VFSMOUNT_IOPS_GETATTR
++#define	ZPL_GETATTR_WRAPPER(func)					\
++static int								\
++func(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat)	\
++{									\
++	struct path path = { .mnt = mnt, .dentry = dentry };		\
++	return func##_impl(&path, stat, STATX_BASIC_STATS,		\
++	    AT_STATX_SYNC_AS_STAT);					\
++}
++#elif defined(HAVE_PATH_IOPS_GETATTR)
++#define	ZPL_GETATTR_WRAPPER(func)					\
++static int								\
++func(const struct path *path, struct kstat *stat, u32 request_mask,	\
++    unsigned int query_flags)						\
++{									\
++	return (func##_impl(path, stat, request_mask, query_flags));	\
++}
++#else
++#error
++#endif
++
++
+ #endif /* _ZFS_VFS_H */
+diff --git a/module/zfs/zpl_ctldir.c b/module/zfs/zpl_ctldir.c
+index b6a3b66..bd8af39 100644
+--- a/module/zfs/zpl_ctldir.c
++++ b/module/zfs/zpl_ctldir.c
+@@ -100,16 +100,15 @@ zpl_root_readdir(struct file *filp, void *dirent, filldir_t filldir)
+  */
+ /* ARGSUSED */
+ static int
+-zpl_root_getattr(struct vfsmount *mnt, struct dentry *dentry,
+-    struct kstat *stat)
++zpl_root_getattr_impl(const struct path *path, struct kstat *stat,
++    u32 request_mask, unsigned int query_flags)
+ {
+-	int error;
+-
+-	error = simple_getattr(mnt, dentry, stat);
++	generic_fillattr(path->dentry->d_inode, stat);
+ 	stat->atime = CURRENT_TIME;
+ 
+-	return (error);
++	return (0);
+ }
++ZPL_GETATTR_WRAPPER(zpl_root_getattr);
+ 
+ static struct dentry *
+ #ifdef HAVE_LOOKUP_NAMEIDATA
+@@ -375,21 +374,22 @@ zpl_snapdir_mkdir(struct inode *dip, struct dentry *dentry, zpl_umode_t mode)
+  */
+ /* ARGSUSED */
+ static int
+-zpl_snapdir_getattr(struct vfsmount *mnt, struct dentry *dentry,
+-    struct kstat *stat)
++zpl_snapdir_getattr_impl(const struct path *path, struct kstat *stat,
++    u32 request_mask, unsigned int query_flags)
+ {
+-	zfs_sb_t *zsb = ITOZSB(dentry->d_inode);
+-	int error;
++	zfs_sb_t *zsb = ITOZSB(path->dentry->d_inode);
+ 
+ 	ZFS_ENTER(zsb);
+-	error = simple_getattr(mnt, dentry, stat);
++	generic_fillattr(path->dentry->d_inode, stat);
++
+ 	stat->nlink = stat->size = 2;
+ 	stat->ctime = stat->mtime = dmu_objset_snap_cmtime(zsb->z_os);
+ 	stat->atime = CURRENT_TIME;
+ 	ZFS_EXIT(zsb);
+ 
+-	return (error);
++	return (0);
+ }
++ZPL_GETATTR_WRAPPER(zpl_snapdir_getattr);
+ 
+ /*
+  * The '.zfs/snapshot' directory file operations.  These mainly control
+@@ -509,10 +509,10 @@ zpl_shares_readdir(struct file *filp, void *dirent, filldir_t filldir)
+ 
+ /* ARGSUSED */
+ static int
+-zpl_shares_getattr(struct vfsmount *mnt, struct dentry *dentry,
+-    struct kstat *stat)
++zpl_shares_getattr_impl(const struct path *path, struct kstat *stat,
++    u32 request_mask, unsigned int query_flags)
+ {
+-	struct inode *ip = dentry->d_inode;
++	struct inode *ip = path->dentry->d_inode;
+ 	zfs_sb_t *zsb = ITOZSB(ip);
+ 	znode_t *dzp;
+ 	int error;
+@@ -520,11 +520,11 @@ zpl_shares_getattr(struct vfsmount *mnt, struct dentry *dentry,
+ 	ZFS_ENTER(zsb);
+ 
+ 	if (zsb->z_shares_dir == 0) {
+-		error = simple_getattr(mnt, dentry, stat);
++		generic_fillattr(path->dentry->d_inode, stat);
+ 		stat->nlink = stat->size = 2;
+ 		stat->atime = CURRENT_TIME;
+ 		ZFS_EXIT(zsb);
+-		return (error);
++		return (0);
+ 	}
+ 
+ 	error = -zfs_zget(zsb, zsb->z_shares_dir, &dzp);
+@@ -538,6 +538,7 @@ zpl_shares_getattr(struct vfsmount *mnt, struct dentry *dentry,
+ 
+ 	return (error);
+ }
++ZPL_GETATTR_WRAPPER(zpl_shares_getattr);
+ 
+ /*
+  * The '.zfs/shares' directory file operations.
+diff --git a/module/zfs/zpl_inode.c b/module/zfs/zpl_inode.c
+index 2e438ea..8351ab5 100644
+--- a/module/zfs/zpl_inode.c
++++ b/module/zfs/zpl_inode.c
+@@ -340,18 +340,25 @@ zpl_rmdir(struct inode *dir, struct dentry *dentry)
+ }
+ 
+ static int
+-zpl_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat)
++zpl_getattr_impl(const struct path *path, struct kstat *stat, u32 request_mask,
++    unsigned int query_flags)
+ {
+ 	int error;
+ 	fstrans_cookie_t cookie;
+ 
+ 	cookie = spl_fstrans_mark();
+-	error = -zfs_getattr_fast(dentry->d_inode, stat);
++
++	/*
++	 * XXX request_mask and query_flags currently ignored.
++	 */
++
++	error = -zfs_getattr_fast(path->dentry->d_inode, stat);
+ 	spl_fstrans_unmark(cookie);
+ 	ASSERT3S(error, <=, 0);
+ 
+ 	return (error);
+ }
++ZPL_GETATTR_WRAPPER(zpl_getattr);
+ 
+ static int
+ zpl_setattr(struct dentry *dentry, struct iattr *ia)
