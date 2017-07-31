@@ -26,7 +26,7 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	1
+%define	rel	0.1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
@@ -178,6 +178,8 @@ pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.\
 %defattr(644,root,root,755)\
 %dir /lib/modules/%{_kernel_ver}/misc/avl\
 /lib/modules/%{_kernel_ver}/misc/avl/zavl.ko*\
+%dir /lib/modules/%{_kernel_ver}/misc/icp\
+/lib/modules/%{_kernel_ver}/misc/icp/icp.ko*\
 %dir /lib/modules/%{_kernel_ver}/misc/nvpair\
 /lib/modules/%{_kernel_ver}/misc/nvpair/znvpair.ko*\
 %dir /lib/modules/%{_kernel_ver}/misc/unicode\
