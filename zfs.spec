@@ -26,7 +26,7 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	0.1
+%define	rel	1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
@@ -258,6 +258,11 @@ cp -a installed/* $RPM_BUILD_ROOT
 
 install -d $RPM_BUILD_ROOT%{_pkgconfigdir}
 %{__mv} $RPM_BUILD_ROOT%{_npkgconfigdir}/* $RPM_BUILD_ROOT%{_pkgconfigdir}
+
+# Package these? These are integration tests of the implementation.
+%{__rm} -r $RPM_BUILD_ROOT%{_datadir}/zfs/{zfs-tests,test-runner,runfiles}
+%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/{raidz_test,test-runner}.1*
+%{__rm} $RPM_BUILD_ROOT%{_bindir}/raidz_test
 %endif
 
 %clean
@@ -274,6 +279,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/arc_summary.py
 %attr(755,root,root) %{_bindir}/arcstat.py
 %attr(755,root,root) %{_bindir}/dbufstat.py
+%attr(755,root,root) %{_bindir}/zgenhostid
 %attr(755,root,root) %{_sbindir}/fsck.zfs
 %attr(755,root,root) %{_sbindir}/zdb
 %attr(755,root,root) %{_sbindir}/zed
@@ -290,6 +296,8 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_sysconfdir}/zfs/zed.d
 %attr(755,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/zfs/zed.d/*.sh
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/zfs/zed.d/zed.rc
+%dir %{_sysconfdir}/zfs/zpool.d
+%attr(755,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/zfs/zpool.d/*
 %attr(754,root,root) /etc/rc.d/init.d/zfs-import
 %attr(754,root,root) /etc/rc.d/init.d/zfs-mount
 %attr(754,root,root) /etc/rc.d/init.d/zfs-share
@@ -312,6 +320,8 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_libdir}/zfs
 %dir %{_libdir}/zfs/zed.d
 %attr(755,root,root) %{_libdir}/zfs/zed.d/*.sh
+%dir %{_libdir}/zfs/zpool.d
+%attr(755,root,root) %{_libdir}/zfs/zpool.d/*
 %dir %{_datadir}/zfs
 %attr(755,root,root) %{_datadir}/zfs/*.sh
 %dir %{_datadir}/zfs/zpios-profile
@@ -333,6 +343,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zdb.8*
 %{_mandir}/man8/zed.8*
 %{_mandir}/man8/zfs.8*
+%{_mandir}/man8/zgenhostid.8*
 %{_mandir}/man8/zinject.8*
 %{_mandir}/man8/zpool.8*
 %{_mandir}/man8/zstreamdump.8*
@@ -378,12 +389,16 @@ rm -rf $RPM_BUILD_ROOT
 %files -n dracut-zfs
 %defattr(644,root,root,755)
 %doc contrib/dracut/README.dracut.markdown
+%dir %{dracutlibdir}/modules.d/02zfsexpandknowledge
+%attr(755,root,root) %{dracutlibdir}/modules.d/02zfsexpandknowledge/module-setup.sh
 %dir %{dracutlibdir}/modules.d/90zfs
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/export-zfs.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/module-setup.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/mount-zfs.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/parse-zfs.sh
+%attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-generator.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-lib.sh
+%attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-needshutdown.sh
 %endif
 
 %if %{with kernel}
