@@ -1,0 +1,560 @@
+diff -ur -x Makefile.in zfs-0.7.3/module/icp/io/aes.c zfs-0.7.3-randstruct/module/icp/io/aes.c
+--- zfs-0.7.3/module/icp/io/aes.c	2017-10-18 23:47:55.000000000 +0200
++++ zfs-0.7.3-randstruct/module/icp/io/aes.c	2017-11-18 14:27:50.736864845 +0100
+@@ -132,16 +132,16 @@
+     crypto_data_t *, crypto_spi_ctx_template_t, crypto_req_handle_t);
+ 
+ static crypto_cipher_ops_t aes_cipher_ops = {
+-	aes_encrypt_init,
+-	aes_encrypt,
+-	aes_encrypt_update,
+-	aes_encrypt_final,
+-	aes_encrypt_atomic,
+-	aes_decrypt_init,
+-	aes_decrypt,
+-	aes_decrypt_update,
+-	aes_decrypt_final,
+-	aes_decrypt_atomic
++	.encrypt_init =   aes_encrypt_init,
++	.encrypt =        aes_encrypt,
++	.encrypt_update = aes_encrypt_update,
++	.encrypt_final =  aes_encrypt_final,
++	.encrypt_atomic = aes_encrypt_atomic,
++	.decrypt_init =   aes_decrypt_init,
++	.decrypt =        aes_decrypt,
++	.decrypt_update = aes_decrypt_update,
++	.decrypt_final =  aes_decrypt_final,
++	.decrypt_atomic = aes_decrypt_atomic
+ };
+ 
+ static int aes_mac_atomic(crypto_provider_handle_t, crypto_session_id_t,
+@@ -152,12 +152,8 @@
+     crypto_spi_ctx_template_t, crypto_req_handle_t);
+ 
+ static crypto_mac_ops_t aes_mac_ops = {
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	aes_mac_atomic,
+-	aes_mac_verify_atomic
++	.mac_atomic = aes_mac_atomic,
++	.mac_verify_atomic = aes_mac_verify_atomic
+ };
+ 
+ static int aes_create_ctx_template(crypto_provider_handle_t,
+@@ -166,25 +162,19 @@
+ static int aes_free_context(crypto_ctx_t *);
+ 
+ static crypto_ctx_ops_t aes_ctx_ops = {
+-	aes_create_ctx_template,
+-	aes_free_context
++	.create_ctx_template = aes_create_ctx_template,
++	.free_context = aes_free_context
+ };
+ 
++#undef	co_control_ops
++#undef	co_cipher_ops
++#undef	co_mac_ops
++#undef	co_ctx_ops
+ static crypto_ops_t aes_crypto_ops = {{{{{
+-	&aes_control_ops,
+-	NULL,
+-	&aes_cipher_ops,
+-	&aes_mac_ops,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	&aes_ctx_ops
++	.co_control_ops = &aes_control_ops,
++	.co_cipher_ops  = &aes_cipher_ops,
++	.co_mac_ops     = &aes_mac_ops,
++	.co_ctx_ops     = &aes_ctx_ops
+ }}}}};
+ 
+ static crypto_provider_info_t aes_prov_info = {{{{
+diff -ur -x Makefile.in zfs-0.7.3/module/icp/io/sha1_mod.c zfs-0.7.3-randstruct/module/icp/io/sha1_mod.c
+--- zfs-0.7.3/module/icp/io/sha1_mod.c	2017-10-18 23:47:55.000000000 +0200
++++ zfs-0.7.3-randstruct/module/icp/io/sha1_mod.c	2017-11-18 14:32:59.798477403 +0100
+@@ -115,12 +115,11 @@
+     crypto_req_handle_t);
+ 
+ static crypto_digest_ops_t sha1_digest_ops = {
+-	sha1_digest_init,
+-	sha1_digest,
+-	sha1_digest_update,
+-	NULL,
+-	sha1_digest_final,
+-	sha1_digest_atomic
++	.digest_init   = sha1_digest_init,
++	.digest        = sha1_digest,
++	.digest_update = sha1_digest_update,
++	.digest_final  = sha1_digest_final,
++	.digest_atomic = sha1_digest_atomic
+ };
+ 
+ static int sha1_mac_init(crypto_ctx_t *, crypto_mechanism_t *, crypto_key_t *,
+@@ -136,12 +135,11 @@
+     crypto_spi_ctx_template_t, crypto_req_handle_t);
+ 
+ static crypto_mac_ops_t sha1_mac_ops = {
+-	sha1_mac_init,
+-	NULL,
+-	sha1_mac_update,
+-	sha1_mac_final,
+-	sha1_mac_atomic,
+-	sha1_mac_verify_atomic
++	.mac_init          = sha1_mac_init,
++	.mac_update        = sha1_mac_update,
++	.mac_final         = sha1_mac_final,
++	.mac_atomic        = sha1_mac_atomic,
++	.mac_verify_atomic = sha1_mac_verify_atomic
+ };
+ 
+ static int sha1_create_ctx_template(crypto_provider_handle_t,
+@@ -150,25 +148,19 @@
+ static int sha1_free_context(crypto_ctx_t *);
+ 
+ static crypto_ctx_ops_t sha1_ctx_ops = {
+-	sha1_create_ctx_template,
+-	sha1_free_context
++	.create_ctx_template = sha1_create_ctx_template,
++	.free_context = sha1_free_context
+ };
+ 
++#undef	co_control_ops
++#undef	co_digest_ops
++#undef	co_mac_ops
++#undef	co_ctx_ops
+ static crypto_ops_t sha1_crypto_ops = {{{{{
+-	&sha1_control_ops,
+-	&sha1_digest_ops,
+-	NULL,
+-	&sha1_mac_ops,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	&sha1_ctx_ops,
++	.co_control_ops = &sha1_control_ops,
++	.co_digest_ops  = &sha1_digest_ops,
++	.co_mac_ops     = &sha1_mac_ops,
++	.co_ctx_ops     = &sha1_ctx_ops,
+ }}}}};
+ 
+ static crypto_provider_info_t sha1_prov_info = {{{{
+diff -ur -x Makefile.in zfs-0.7.3/module/icp/io/sha2_mod.c zfs-0.7.3-randstruct/module/icp/io/sha2_mod.c
+--- zfs-0.7.3/module/icp/io/sha2_mod.c	2017-10-18 23:47:55.000000000 +0200
++++ zfs-0.7.3-randstruct/module/icp/io/sha2_mod.c	2017-11-18 14:36:27.081039215 +0100
+@@ -143,12 +143,11 @@
+     crypto_req_handle_t);
+ 
+ static crypto_digest_ops_t sha2_digest_ops = {
+-	sha2_digest_init,
+-	sha2_digest,
+-	sha2_digest_update,
+-	NULL,
+-	sha2_digest_final,
+-	sha2_digest_atomic
++	.digest_init   = sha2_digest_init,
++	.digest        = sha2_digest,
++	.digest_update = sha2_digest_update,
++	.digest_final  = sha2_digest_final,
++	.digest_atomic = sha2_digest_atomic
+ };
+ 
+ static int sha2_mac_init(crypto_ctx_t *, crypto_mechanism_t *, crypto_key_t *,
+@@ -164,12 +163,11 @@
+     crypto_spi_ctx_template_t, crypto_req_handle_t);
+ 
+ static crypto_mac_ops_t sha2_mac_ops = {
+-	sha2_mac_init,
+-	NULL,
+-	sha2_mac_update,
+-	sha2_mac_final,
+-	sha2_mac_atomic,
+-	sha2_mac_verify_atomic
++	.mac_init          = sha2_mac_init,
++	.mac_update        = sha2_mac_update,
++	.mac_final         = sha2_mac_final,
++	.mac_atomic        = sha2_mac_atomic,
++	.mac_verify_atomic = sha2_mac_verify_atomic
+ };
+ 
+ static int sha2_create_ctx_template(crypto_provider_handle_t,
+@@ -178,25 +176,19 @@
+ static int sha2_free_context(crypto_ctx_t *);
+ 
+ static crypto_ctx_ops_t sha2_ctx_ops = {
+-	sha2_create_ctx_template,
+-	sha2_free_context
++	.create_ctx_template = sha2_create_ctx_template,
++	.free_context = sha2_free_context
+ };
+ 
++#undef	co_control_ops
++#undef	co_digest_ops
++#undef	co_mac_ops
++#undef	co_ctx_ops
+ static crypto_ops_t sha2_crypto_ops = {{{{{
+-	&sha2_control_ops,
+-	&sha2_digest_ops,
+-	NULL,
+-	&sha2_mac_ops,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	&sha2_ctx_ops
++	.co_control_ops = &sha2_control_ops,
++	.co_digest_ops = &sha2_digest_ops,
++	.co_mac_ops = &sha2_mac_ops,
++	.co_ctx_ops = &sha2_ctx_ops
+ }}}}};
+ 
+ static crypto_provider_info_t sha2_prov_info = {{{{
+diff -ur -x Makefile.in zfs-0.7.3/module/icp/io/skein_mod.c zfs-0.7.3-randstruct/module/icp/io/skein_mod.c
+--- zfs-0.7.3/module/icp/io/skein_mod.c	2017-10-18 23:47:55.000000000 +0200
++++ zfs-0.7.3-randstruct/module/icp/io/skein_mod.c	2017-11-18 14:39:32.882976968 +0100
+@@ -88,12 +88,11 @@
+     crypto_req_handle_t);
+ 
+ static crypto_digest_ops_t skein_digest_ops = {
+-	skein_digest_init,
+-	skein_digest,
+-	skein_update,
+-	NULL,
+-	skein_final,
+-	skein_digest_atomic
++	.digest_init   = skein_digest_init,
++	.digest        = skein_digest,
++	.digest_update = skein_update,
++	.digest_final  = skein_final,
++	.digest_atomic = skein_digest_atomic
+ };
+ 
+ static int skein_mac_init(crypto_ctx_t *, crypto_mechanism_t *, crypto_key_t *,
+@@ -103,12 +102,10 @@
+     crypto_spi_ctx_template_t, crypto_req_handle_t);
+ 
+ static crypto_mac_ops_t skein_mac_ops = {
+-	skein_mac_init,
+-	NULL,
+-	skein_update,	/* using regular digest update is OK here */
+-	skein_final,	/* using regular digest final is OK here */
+-	skein_mac_atomic,
+-	NULL
++	.mac_init   = skein_mac_init,
++	.mac_update = skein_update,	/* using regular digest update is OK here */
++	.mac_final  = skein_final,	/* using regular digest final is OK here */
++	.mac_atomic = skein_mac_atomic,
+ };
+ 
+ static int skein_create_ctx_template(crypto_provider_handle_t,
+@@ -117,25 +114,19 @@
+ static int skein_free_context(crypto_ctx_t *);
+ 
+ static crypto_ctx_ops_t skein_ctx_ops = {
+-	skein_create_ctx_template,
+-	skein_free_context
++	.create_ctx_template = skein_create_ctx_template,
++	.free_context = skein_free_context
+ };
+ 
++#undef	co_control_ops
++#undef	co_digest_ops
++#undef	co_mac_ops
++#undef	co_ctx_ops
+ static crypto_ops_t skein_crypto_ops = {{{{{
+-	&skein_control_ops,
+-	&skein_digest_ops,
+-	NULL,
+-	&skein_mac_ops,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	NULL,
+-	&skein_ctx_ops,
++	.co_control_ops = &skein_control_ops,
++	.co_digest_ops  = &skein_digest_ops,
++	.co_mac_ops     = &skein_mac_ops,
++	.co_ctx_ops     = &skein_ctx_ops,
+ }}}}};
+ 
+ static crypto_provider_info_t skein_prov_info = {{{{
+diff -ur -x Makefile.in zfs-0.7.3/module/icp/os/modconf.c zfs-0.7.3-randstruct/module/icp/os/modconf.c
+--- zfs-0.7.3/module/icp/os/modconf.c	2017-10-18 23:47:55.000000000 +0200
++++ zfs-0.7.3-randstruct/module/icp/os/modconf.c	2017-11-18 14:41:58.243714079 +0100
+@@ -36,7 +36,9 @@
+  * Cryptographic Modules
+  */
+ struct mod_ops mod_cryptoops = {
+-	mod_null, mod_null, mod_infonull
++	.modm_install = mod_null,
++	.modm_remove = mod_null,
++	.modm_info = mod_infonull
+ };
+ 
+ /*
+diff -ur -x Makefile.in zfs-0.7.3/module/nvpair/nvpair_alloc_fixed.c zfs-0.7.3-randstruct/module/nvpair/nvpair_alloc_fixed.c
+--- zfs-0.7.3/module/nvpair/nvpair_alloc_fixed.c	2017-10-18 23:47:55.000000000 +0200
++++ zfs-0.7.3-randstruct/module/nvpair/nvpair_alloc_fixed.c	2017-11-18 13:47:40.722198859 +0100
+@@ -110,11 +110,10 @@
+ }
+ 
+ const nv_alloc_ops_t nv_fixed_ops_def = {
+-	nv_fixed_init,	/* nv_ao_init() */
+-	NULL,		/* nv_ao_fini() */
+-	nv_fixed_alloc,	/* nv_ao_alloc() */
+-	nv_fixed_free,	/* nv_ao_free() */
+-	nv_fixed_reset	/* nv_ao_reset() */
++	.nv_ao_init  = nv_fixed_init,	/* nv_ao_init() */
++	.nv_ao_alloc = nv_fixed_alloc,	/* nv_ao_alloc() */
++	.nv_ao_free  = nv_fixed_free,	/* nv_ao_free() */
++	.nv_ao_reset = nv_fixed_reset	/* nv_ao_reset() */
+ };
+ 
+ const nv_alloc_ops_t *nv_fixed_ops = &nv_fixed_ops_def;
+diff -ur -x Makefile.in zfs-0.7.3/module/nvpair/nvpair_alloc_spl.c zfs-0.7.3-randstruct/module/nvpair/nvpair_alloc_spl.c
+--- zfs-0.7.3/module/nvpair/nvpair_alloc_spl.c	2017-10-18 23:47:55.000000000 +0200
++++ zfs-0.7.3-randstruct/module/nvpair/nvpair_alloc_spl.c	2017-11-18 13:44:13.936668708 +0100
+@@ -53,42 +53,30 @@
+ }
+ 
+ const nv_alloc_ops_t spl_sleep_ops_def = {
+-	NULL,			/* nv_ao_init() */
+-	NULL,			/* nv_ao_fini() */
+-	nv_alloc_sleep_spl,	/* nv_ao_alloc() */
+-	nv_free_spl,		/* nv_ao_free() */
+-	NULL			/* nv_ao_reset() */
++	.nv_ao_alloc = nv_alloc_sleep_spl,	/* nv_ao_alloc() */
++	.nv_ao_free = nv_free_spl,		/* nv_ao_free() */
+ };
+ 
+ const nv_alloc_ops_t spl_pushpage_ops_def = {
+-	NULL,			/* nv_ao_init() */
+-	NULL,			/* nv_ao_fini() */
+-	nv_alloc_pushpage_spl,	/* nv_ao_alloc() */
+-	nv_free_spl,		/* nv_ao_free() */
+-	NULL			/* nv_ao_reset() */
++	.nv_ao_alloc = nv_alloc_pushpage_spl,	/* nv_ao_alloc() */
++	.nv_ao_free = nv_free_spl,		/* nv_ao_free() */
+ };
+ 
+ const nv_alloc_ops_t spl_nosleep_ops_def = {
+-	NULL,			/* nv_ao_init() */
+-	NULL,			/* nv_ao_fini() */
+-	nv_alloc_nosleep_spl,	/* nv_ao_alloc() */
+-	nv_free_spl,		/* nv_ao_free() */
+-	NULL			/* nv_ao_reset() */
++	.nv_ao_alloc = nv_alloc_nosleep_spl,	/* nv_ao_alloc() */
++	.nv_ao_free = nv_free_spl,		/* nv_ao_free() */
+ };
+ 
+ nv_alloc_t nv_alloc_sleep_def = {
+-	&spl_sleep_ops_def,
+-	NULL
++	.nva_ops = &spl_sleep_ops_def,
+ };
+ 
+ nv_alloc_t nv_alloc_pushpage_def = {
+-	&spl_pushpage_ops_def,
+-	NULL
++	.nva_ops = &spl_pushpage_ops_def,
+ };
+ 
+ nv_alloc_t nv_alloc_nosleep_def = {
+-	&spl_nosleep_ops_def,
+-	NULL
++	.nva_ops = &spl_nosleep_ops_def,
+ };
+ 
+ nv_alloc_t *nv_alloc_sleep = &nv_alloc_sleep_def;
+diff -ur -x Makefile.in zfs-0.7.3/module/nvpair/nvpair.c zfs-0.7.3-randstruct/module/nvpair/nvpair.c
+--- zfs-0.7.3/module/nvpair/nvpair.c	2017-10-18 23:47:55.000000000 +0200
++++ zfs-0.7.3-randstruct/module/nvpair/nvpair.c	2017-11-18 13:36:35.657744967 +0100
+@@ -2801,11 +2801,11 @@
+ }
+ 
+ static const nvs_ops_t nvs_native_ops = {
+-	nvs_native_nvlist,
+-	nvs_native_nvpair,
+-	nvs_native_nvp_op,
+-	nvs_native_nvp_size,
+-	nvs_native_nvl_fini
++	.nvs_nvlist   = nvs_native_nvlist,
++	.nvs_nvpair   = nvs_native_nvpair,
++	.nvs_nvp_op   = nvs_native_nvp_op,
++	.nvs_nvp_size = nvs_native_nvp_size,
++	.nvs_nvl_fini = nvs_native_nvl_fini
+ };
+ 
+ static int
+@@ -3288,11 +3288,11 @@
+ }
+ 
+ static const struct nvs_ops nvs_xdr_ops = {
+-	nvs_xdr_nvlist,
+-	nvs_xdr_nvpair,
+-	nvs_xdr_nvp_op,
+-	nvs_xdr_nvp_size,
+-	nvs_xdr_nvl_fini
++	.nvs_nvlist   = nvs_xdr_nvlist,
++	.nvs_nvpair   = nvs_xdr_nvpair,
++	.nvs_nvp_op   = nvs_xdr_nvp_op,
++	.nvs_nvp_size = nvs_xdr_nvp_size,
++	.nvs_nvl_fini = nvs_xdr_nvl_fini
+ };
+ 
+ static int
+diff -ur -x Makefile.in zfs-0.7.3/module/zfs/fm.c zfs-0.7.3-randstruct/module/zfs/fm.c
+--- zfs-0.7.3/module/zfs/fm.c	2017-10-18 23:47:55.000000000 +0200
++++ zfs-0.7.3-randstruct/module/zfs/fm.c	2017-11-18 15:00:16.140450509 +0100
+@@ -794,11 +794,8 @@
+ }
+ 
+ const nv_alloc_ops_t fm_mem_alloc_ops = {
+-	NULL,
+-	NULL,
+-	i_fm_alloc,
+-	i_fm_free,
+-	NULL
++	.nv_ao_alloc = i_fm_alloc,
++	.nv_ao_free = i_fm_free,
+ };
+ 
+ /*
+diff -ur -x Makefile.in zfs-0.7.3/module/zfs/metaslab.c zfs-0.7.3-randstruct/module/zfs/metaslab.c
+--- zfs-0.7.3/module/zfs/metaslab.c	2017-10-18 23:47:55.000000000 +0200
++++ zfs-0.7.3-randstruct/module/zfs/metaslab.c	2017-11-18 15:02:58.668193558 +0100
+@@ -1049,11 +1049,11 @@
+ }
+ 
+ static range_tree_ops_t metaslab_rt_ops = {
+-	metaslab_rt_create,
+-	metaslab_rt_destroy,
+-	metaslab_rt_add,
+-	metaslab_rt_remove,
+-	metaslab_rt_vacate
++	.rtop_create  = metaslab_rt_create,
++	.rtop_destroy = metaslab_rt_destroy,
++	.rtop_add     = metaslab_rt_add,
++	.rtop_remove  = metaslab_rt_remove,
++	.rtop_vacate  = metaslab_rt_vacate
+ };
+ 
+ /*
+diff -ur -x Makefile.in zfs-0.7.3/module/zfs/vdev_mirror.c zfs-0.7.3-randstruct/module/zfs/vdev_mirror.c
+--- zfs-0.7.3/module/zfs/vdev_mirror.c	2017-10-18 23:47:55.000000000 +0200
++++ zfs-0.7.3-randstruct/module/zfs/vdev_mirror.c	2017-11-18 15:07:03.201488373 +0100
+@@ -109,8 +109,8 @@
+ }
+ 
+ static const zio_vsd_ops_t vdev_mirror_vsd_ops = {
+-	vdev_mirror_map_free,
+-	zio_vsd_default_cksum_report
++	.vsd_free = vdev_mirror_map_free,
++	.vsd_cksum_report = zio_vsd_default_cksum_report
+ };
+ 
+ static int
+diff -ur -x Makefile.in zfs-0.7.3/module/zfs/vdev_raidz.c zfs-0.7.3-randstruct/module/zfs/vdev_raidz.c
+--- zfs-0.7.3/module/zfs/vdev_raidz.c	2017-10-18 23:47:55.000000000 +0200
++++ zfs-0.7.3-randstruct/module/zfs/vdev_raidz.c	2017-11-18 15:08:11.920011894 +0100
+@@ -318,8 +318,8 @@
+ }
+ 
+ static const zio_vsd_ops_t vdev_raidz_vsd_ops = {
+-	vdev_raidz_map_free_vsd,
+-	vdev_raidz_cksum_report
++	.vsd_free = vdev_raidz_map_free_vsd,
++	.vsd_cksum_report = vdev_raidz_cksum_report
+ };
+ 
+ /*
+diff -ur -x Makefile.in zfs-0.7.3/module/zfs/zfs_acl.c zfs-0.7.3-randstruct/module/zfs/zfs_acl.c
+--- zfs-0.7.3/module/zfs/zfs_acl.c	2017-10-18 23:47:55.000000000 +0200
++++ zfs-0.7.3-randstruct/module/zfs/zfs_acl.c	2017-11-18 15:12:28.276899635 +0100
+@@ -174,18 +174,18 @@
+ }
+ 
+ static acl_ops_t zfs_acl_v0_ops = {
+-	zfs_ace_v0_get_mask,
+-	zfs_ace_v0_set_mask,
+-	zfs_ace_v0_get_flags,
+-	zfs_ace_v0_set_flags,
+-	zfs_ace_v0_get_type,
+-	zfs_ace_v0_set_type,
+-	zfs_ace_v0_get_who,
+-	zfs_ace_v0_set_who,
+-	zfs_ace_v0_size,
+-	zfs_ace_v0_abstract_size,
+-	zfs_ace_v0_mask_off,
+-	zfs_ace_v0_data
++	.ace_mask_get      = zfs_ace_v0_get_mask,
++	.ace_mask_set      = zfs_ace_v0_set_mask,
++	.ace_flags_get     = zfs_ace_v0_get_flags,
++	.ace_flags_set     = zfs_ace_v0_set_flags,
++	.ace_type_get      = zfs_ace_v0_get_type,
++	.ace_type_set      = zfs_ace_v0_set_type,
++	.ace_who_get       = zfs_ace_v0_get_who,
++	.ace_who_set       = zfs_ace_v0_set_who,
++	.ace_size          = zfs_ace_v0_size,
++	.ace_abstract_size = zfs_ace_v0_abstract_size,
++	.ace_mask_off      = zfs_ace_v0_mask_off,
++	.ace_data          = zfs_ace_v0_data
+ };
+ 
+ static uint16_t
+@@ -310,18 +310,18 @@
+ }
+ 
+ static acl_ops_t zfs_acl_fuid_ops = {
+-	zfs_ace_fuid_get_mask,
+-	zfs_ace_fuid_set_mask,
+-	zfs_ace_fuid_get_flags,
+-	zfs_ace_fuid_set_flags,
+-	zfs_ace_fuid_get_type,
+-	zfs_ace_fuid_set_type,
+-	zfs_ace_fuid_get_who,
+-	zfs_ace_fuid_set_who,
+-	zfs_ace_fuid_size,
+-	zfs_ace_fuid_abstract_size,
+-	zfs_ace_fuid_mask_off,
+-	zfs_ace_fuid_data
++	.ace_mask_get      = zfs_ace_fuid_get_mask,
++	.ace_mask_set      = zfs_ace_fuid_set_mask,
++	.ace_flags_get     = zfs_ace_fuid_get_flags,
++	.ace_flags_set     = zfs_ace_fuid_set_flags,
++	.ace_type_get      = zfs_ace_fuid_get_type,
++	.ace_type_set      = zfs_ace_fuid_set_type,
++	.ace_who_get       = zfs_ace_fuid_get_who,
++	.ace_who_set       = zfs_ace_fuid_set_who,
++	.ace_size          = zfs_ace_fuid_size,
++	.ace_abstract_size = zfs_ace_fuid_abstract_size,
++	.ace_mask_off      = zfs_ace_fuid_mask_off,
++	.ace_data          = zfs_ace_fuid_data
+ };
+ 
+ /*
