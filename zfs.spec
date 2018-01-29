@@ -40,6 +40,7 @@ Source0:	https://github.com/zfsonlinux/zfs/releases/download/zfs-%{version}/%{pn
 Patch0:		%{pname}-link.patch
 Patch1:		x32.patch
 Patch2:		xattr-in-glibc.patch
+Patch3:		randstruct.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -223,6 +224,7 @@ p=`pwd`\
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 %build
 %{__libtoolize}
