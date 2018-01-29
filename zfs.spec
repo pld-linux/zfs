@@ -309,6 +309,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/lib/modules-load.d/zfs.conf
 /etc/systemd/system-preset/50-zfs.preset
 %{systemdunitdir}/zfs.target
+%{systemdunitdir}/zfs-import.target
 %{systemdunitdir}/zfs-import-cache.service
 %{systemdunitdir}/zfs-import-scan.service
 %{systemdunitdir}/zfs-mount.service
@@ -319,11 +320,11 @@ rm -rf $RPM_BUILD_ROOT
 /lib/udev/rules.d/60-zvol.rules
 /lib/udev/rules.d/69-vdev.rules
 /lib/udev/rules.d/90-zfs.rules
-%dir %{_libdir}/zfs
-%dir %{_libdir}/zfs/zed.d
-%attr(755,root,root) %{_libdir}/zfs/zed.d/*.sh
-%dir %{_libdir}/zfs/zpool.d
-%attr(755,root,root) %{_libdir}/zfs/zpool.d/*
+%dir %{_libexecdir}/zfs
+%dir %{_libexecdir}/zfs/zed.d
+%attr(755,root,root) %{_libexecdir}/zfs/zed.d/*.sh
+%dir %{_libexecdir}/zfs/zpool.d
+%attr(755,root,root) %{_libexecdir}/zfs/zpool.d/*
 %dir %{_datadir}/zfs
 %attr(755,root,root) %{_datadir}/zfs/*.sh
 %dir %{_datadir}/zfs/zpios-profile
