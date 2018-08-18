@@ -27,7 +27,7 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	2
+%define	rel	3
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
@@ -214,7 +214,6 @@ pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.\
 \
 %files -n kernel%{_alt_kernel}-zfs-devel\
 %defattr(644,root,root,755)\
-/usr/src/spl-%{version}/%{_kernel_ver}\
 /usr/src/zfs-%{version}/%{_kernel_ver}\
 \
 %post	-n kernel%{_alt_kernel}-zfs\
@@ -299,6 +298,9 @@ cd ../..
 
 install -d $RPM_BUILD_ROOT%{_pkgconfigdir}
 %{__mv} $RPM_BUILD_ROOT%{_npkgconfigdir}/* $RPM_BUILD_ROOT%{_pkgconfigdir}
+
+# Drop unneeded spl compat links
+%{__rm} -r /usr/src/spl-%{version}
 
 # Debian specific stuff
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/initramfs-tools
@@ -458,8 +460,4 @@ rm -rf $RPM_BUILD_ROOT
 /usr/src/zfs-%{version}/include
 /usr/src/zfs-%{version}/zfs.release
 /usr/src/zfs-%{version}/zfs_config.h
-%dir /usr/src/spl-%{version}
-/usr/src/spl-%{version}/include
-/usr/src/spl-%{version}/spl.release
-/usr/src/spl-%{version}/spl_config.h
 %endif
