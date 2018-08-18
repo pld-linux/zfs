@@ -277,7 +277,7 @@ rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT
 cp -a installed/* $RPM_BUILD_ROOT
 # Drop unneeded spl compat links
-%{__rm} -r /usr/src/spl-%{version}
+%{__rm} -r $RPM_BUILD_ROOT/usr/src/spl-%{version}
 %endif
 
 %if %{with userspace}
