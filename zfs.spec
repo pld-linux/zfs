@@ -8,6 +8,7 @@
 # Conditional build:
 %bcond_without	kernel		# don't build kernel modules
 %bcond_without	userspace	# don't build userspace programs
+%bcond_without	python		# CPython module
 %bcond_with	verbose		# verbose build (V=1)
 #
 # The goal here is to have main, userspace, package built once with
@@ -26,36 +27,42 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	1
+%define	rel	2
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
+%define	gitrev	1511_g4338c5c06
 Version:	0.7.9
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
-License:	CDDL (ZFS), GPL v2+ (ZPIOS)
+License:	CDDL
 Group:		Applications/System
-Source0:	https://github.com/zfsonlinux/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	3c0852807f90061d4902464ab9b25c0e
-Patch0:		%{pname}-link.patch
-Patch1:		x32.patch
+#Source0:	https://github.com/zfsonlinux/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
+Source0:	%{pname}-%{version}-%{gitrev}.tar.gz
+# Source0-md5:	ceb367d302942e2291f1ad86c1e0d2be
+Patch0:		x32.patch
+Patch1:		am.patch
 URL:		http://zfsonlinux.org/
-Patch3:		randstruct.patch
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
 BuildRequires:	libtool
-BuildRequires:	rpmbuild(macros) >= 1.701
+BuildRequires:	rpmbuild(macros) >= 1.714
 %if %{with kernel}
 %{expand:%buildrequires_kernel kernel%%{_alt_kernel}-module-build >= 3:2.6.20.2}
-%{expand:%buildrequires_kernel kernel%%{_alt_kernel}-spl-devel >= 0.6.3}
 %endif
 %if %{with userspace}
 BuildRequires:	libblkid-devel
 BuildRequires:	libselinux-devel
 BuildRequires:	libuuid-devel
 BuildRequires:	zlib-devel
+%if %{with python}
+BuildRequires:	rpm-pythonprov
+BuildRequires:	python-modules
+BuildRequires:	python-setuptools
+%endif
 %endif
 Requires:	%{pname}-libs = %{version}-%{release}
+Obsoletes:	spl < 0.7.9-2
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		dracutlibdir	%{_prefix}/lib/dracut
@@ -131,10 +138,20 @@ ZFS support for Dracut.
 %description -n dracut-zfs -l pl.UTF-8
 Obsługa ZFS-a dla Dracuta.
 
+%package -n python-pyzfs
+Summary:	Wrapper for libzfs_core C library
+License:	Apache v2.0
+Group:		Libraries/Python
+Requires:	%{pname}-libs = %{version}-%{release}
+
+%description -n python-pyzfs
+Wrapper for libzfs_core C library.
+
 %package -n kernel-zfs-common-devel
 Summary:	ZFS Linux kernel headers
 Summary(pl.UTF-8):	ZFS - pliki nagłówkowe jądra Linuksa
 Group:		Development/Building
+Obsoletes:	kernel-spl-common-devel < 0.7.9-2
 
 %description -n kernel-zfs-common-devel
 ZFS Linux kernel headers common for all PLD kernel versions.
@@ -166,6 +183,7 @@ Release:	%{rel}@%{_kernel_ver_str}\
 Group:		Development/Building\
 Requires:	kernel%{_alt_kernel}-headers\
 Requires:	kernel-zfs-common-devel\
+Obsoletes:	kernel-spl-devel < 0.7.9-2\
 \
 %description -n kernel%{_alt_kernel}-zfs-devel\
 ZFS Linux kernel headers configured for PLD kernel%{_alt_kernel},\
@@ -177,23 +195,26 @@ pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.\
 \
 %files -n kernel%{_alt_kernel}-zfs\
 %defattr(644,root,root,755)\
+%dir /lib/modules/%{_kernel_ver}/misc/lua\
+/lib/modules/%{_kernel_ver}/misc/lua/zlua.ko*\
 %dir /lib/modules/%{_kernel_ver}/misc/avl\
 /lib/modules/%{_kernel_ver}/misc/avl/zavl.ko*\
 %dir /lib/modules/%{_kernel_ver}/misc/icp\
 /lib/modules/%{_kernel_ver}/misc/icp/icp.ko*\
 %dir /lib/modules/%{_kernel_ver}/misc/nvpair\
 /lib/modules/%{_kernel_ver}/misc/nvpair/znvpair.ko*\
+%dir /lib/modules/%{_kernel_ver}/misc/spl\
+/lib/modules/%{_kernel_ver}/misc/spl/spl.ko*\
 %dir /lib/modules/%{_kernel_ver}/misc/unicode\
 /lib/modules/%{_kernel_ver}/misc/unicode/zunicode.ko*\
 %dir /lib/modules/%{_kernel_ver}/misc/zcommon\
 /lib/modules/%{_kernel_ver}/misc/zcommon/zcommon.ko*\
 %dir /lib/modules/%{_kernel_ver}/misc/zfs\
 /lib/modules/%{_kernel_ver}/misc/zfs/zfs.ko*\
-%dir /lib/modules/%{_kernel_ver}/misc/zpios\
-/lib/modules/%{_kernel_ver}/misc/zpios/zpios.ko*\
 \
 %files -n kernel%{_alt_kernel}-zfs-devel\
 %defattr(644,root,root,755)\
+/usr/src/spl-%{version}/%{_kernel_ver}\
 /usr/src/zfs-%{version}/%{_kernel_ver}\
 \
 %post	-n kernel%{_alt_kernel}-zfs\
@@ -222,7 +243,6 @@ p=`pwd`\
 %setup -q -n %{pname}-%{version}
 %patch0 -p1
 %patch1 -p1
-%patch3 -p1
 
 %build
 %{__libtoolize}
@@ -243,6 +263,12 @@ p=`pwd`\
 
 %{__make} \
 	%{?with_verbose:V=1}
+
+%if %{with python}
+cd contrib/pyzfs
+%py_build %{?with_tests:test}
+cd ../..
+%endif
 %endif
 
 %install
@@ -258,8 +284,24 @@ cp -a installed/* $RPM_BUILD_ROOT
 	DESTDIR=$RPM_BUILD_ROOT \
 	DEFAULT_INIT_DIR=/etc/rc.d/init.d
 
+%if %{with python}
+%{__rm} -rf $RPM_BUILD_ROOT%{py_sitescriptdir}
+cd contrib/pyzfs
+%py_install
+
+%py_ocomp $RPM_BUILD_ROOT%{py_sitescriptdir}
+%py_comp $RPM_BUILD_ROOT%{py_sitescriptdir}
+
+%py_postclean
+cd ../..
+%{__rm} -r $RPM_BUILD_ROOT%{py_sitescriptdir}/libzfs_core/test
+%endif
+
 install -d $RPM_BUILD_ROOT%{_pkgconfigdir}
 %{__mv} $RPM_BUILD_ROOT%{_npkgconfigdir}/* $RPM_BUILD_ROOT%{_pkgconfigdir}
+
+# Debian specific stuff
+%{__rm} -r $RPM_BUILD_ROOT%{_datadir}/initramfs-tools
 
 # Package these? These are integration tests of the implementation.
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/zfs/{zfs-tests,test-runner,runfiles}
@@ -276,7 +318,7 @@ rm -rf $RPM_BUILD_ROOT
 %if %{with userspace}
 %files
 %defattr(644,root,root,755)
-%doc AUTHORS COPYRIGHT DISCLAIMER OPENSOLARIS.LICENSE README.markdown
+%doc AUTHORS COPYRIGHT LICENSE README.md
 %attr(755,root,root) /sbin/mount.zfs
 %attr(755,root,root) %{_bindir}/arc_summary.py
 %attr(755,root,root) %{_bindir}/arcstat.py
@@ -288,7 +330,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_sbindir}/zfs
 %attr(755,root,root) %{_sbindir}/zhack
 %attr(755,root,root) %{_sbindir}/zinject
-%attr(755,root,root) %{_sbindir}/zpios
 %attr(755,root,root) %{_sbindir}/zpool
 %attr(755,root,root) %{_sbindir}/zstreamdump
 %attr(755,root,root) %{_sbindir}/ztest
@@ -308,6 +349,7 @@ rm -rf $RPM_BUILD_ROOT
 /etc/zfs/zfs-functions
 /usr/lib/modules-load.d/zfs.conf
 /etc/systemd/system-preset/50-zfs.preset
+/usr/lib/systemd/system-generators/zfs-mount-generator
 %{systemdunitdir}/zfs.target
 %{systemdunitdir}/zfs-import.target
 %{systemdunitdir}/zfs-import-cache.service
@@ -327,15 +369,9 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_libexecdir}/zfs/zpool.d/*
 %dir %{_datadir}/zfs
 %attr(755,root,root) %{_datadir}/zfs/*.sh
-%dir %{_datadir}/zfs/zpios-profile
-%attr(755,root,root) %{_datadir}/zfs/zpios-profile/*.sh
-%dir %{_datadir}/zfs/zpios-test
-%attr(755,root,root) %{_datadir}/zfs/zpios-test/*.sh
-%dir %{_datadir}/zfs/zpool-config
-%attr(755,root,root) %{_datadir}/zfs/zpool-config/*.sh
 %{_mandir}/man1/zhack.1*
-%{_mandir}/man1/zpios.1*
 %{_mandir}/man1/ztest.1*
+%{_mandir}/man5/spl-module-parameters.5*
 %{_mandir}/man5/vdev_id.conf.5*
 %{_mandir}/man5/zfs-events.5*
 %{_mandir}/man5/zfs-module-parameters.5*
@@ -346,6 +382,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zdb.8*
 %{_mandir}/man8/zed.8*
 %{_mandir}/man8/zfs.8*
+%{_mandir}/man8/zfs-mount-generator.8*
+%{_mandir}/man8/zfs-program.8*
 %{_mandir}/man8/zgenhostid.8*
 %{_mandir}/man8/zinject.8*
 %{_mandir}/man8/zpool.8*
@@ -401,7 +439,16 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/parse-zfs.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-generator.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-lib.sh
+%attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-load-key.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-needshutdown.sh
+
+%if %{with python}
+%files -n python-pyzfs
+%defattr(644,root,root,755)
+%doc contrib/pyzfs/README
+%{py_sitescriptdir}/libzfs_core
+%{py_sitescriptdir}/pyzfs-*-py*.egg-info
+%endif
 %endif
 
 %if %{with kernel}
@@ -409,6 +456,10 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644,root,root,755)
 %dir /usr/src/zfs-%{version}
 /usr/src/zfs-%{version}/include
-/usr/src/zfs-%{version}/zfs.release.in
-/usr/src/zfs-%{version}/zfs_config.h.in
+/usr/src/zfs-%{version}/zfs.release
+/usr/src/zfs-%{version}/zfs_config.h
+%dir /usr/src/spl-%{version}
+/usr/src/spl-%{version}/include
+/usr/src/spl-%{version}/spl.release
+/usr/src/spl-%{version}/spl_config.h
 %endif
