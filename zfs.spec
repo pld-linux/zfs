@@ -27,7 +27,7 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	3
+%define	rel	4
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
@@ -276,6 +276,8 @@ rm -rf $RPM_BUILD_ROOT
 %if %{with kernel}
 install -d $RPM_BUILD_ROOT
 cp -a installed/* $RPM_BUILD_ROOT
+# Drop unneeded spl compat links
+%{__rm} -r /usr/src/spl-%{version}
 %endif
 
 %if %{with userspace}
@@ -298,9 +300,6 @@ cd ../..
 
 install -d $RPM_BUILD_ROOT%{_pkgconfigdir}
 %{__mv} $RPM_BUILD_ROOT%{_npkgconfigdir}/* $RPM_BUILD_ROOT%{_pkgconfigdir}
-
-# Drop unneeded spl compat links
-%{__rm} -r /usr/src/spl-%{version}
 
 # Debian specific stuff
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/initramfs-tools
