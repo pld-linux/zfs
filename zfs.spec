@@ -350,7 +350,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(754,root,root) /etc/rc.d/init.d/zfs-zed
 %config(noreplace) %verify(not md5 mtime size) /etc/default/zfs
 /etc/zfs/zfs-functions
-/etc/modules-load.d/zfs.conf
+%config(noreplace) %verify(not md5 mtime size) /etc/modules-load.d/zfs.conf
 /etc/systemd/system-preset/50-zfs.preset
 /lib/systemd/system-generators/zfs-mount-generator
 %{systemdunitdir}/zfs.target
