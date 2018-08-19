@@ -30,3 +30,14 @@ index 55cae89fa..8ce1af3b8 100644
  	cd $(DESTDIR)$(prefix)/src/zfs-$(VERSION)/$(LINUX_VERSION) && \
  	ln -fs zfs_config.h spl_config.h && \
  	ln -fs zfs.release spl.release
+--- zfs-0.7.9/config/user-systemd.m4~	2018-08-17 08:32:52.000000000 +0200
++++ zfs-0.7.9/config/user-systemd.m4	2018-08-19 12:08:45.390362052 +0200
+@@ -18,7 +18,7 @@
+ 	AC_ARG_WITH(systemdmodulesloaddir,
+ 		AC_HELP_STRING([--with-systemdmodulesloaddir=DIR],
+ 		[install systemd module load files into dir [[/usr/lib/modules-load.d]]]),
+-		systemdmoduleloaddir=$withval,systemdmodulesloaddir=/usr/lib/modules-load.d)
++		systemdmodulesloaddir=$withval,systemdmodulesloaddir=/usr/lib/modules-load.d)
+ 
+ 	AC_ARG_WITH(systemdgeneratordir,
+ 		AC_HELP_STRING([--with-systemdgeneratordir=DIR],

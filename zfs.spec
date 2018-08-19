@@ -27,7 +27,7 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	4
+%define	rel	5
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
@@ -258,6 +258,8 @@ p=`pwd`\
 	--with-linux=%{_kernelsrcdir} \
 	--with-systemdunitdir=%{systemdunitdir} \
 	--with-systemdpresetdir=/etc/systemd/system-preset \
+	--with-systemdmodulesloaddir=/etc/modules-load.d \
+	--with-systemdgeneratordir=/lib/systemd/system-generators \
 	--with-udevdir=/lib/udev
 
 %{__make} \
@@ -348,9 +350,9 @@ rm -rf $RPM_BUILD_ROOT
 %attr(754,root,root) /etc/rc.d/init.d/zfs-zed
 %config(noreplace) %verify(not md5 mtime size) /etc/default/zfs
 /etc/zfs/zfs-functions
-/usr/lib/modules-load.d/zfs.conf
+/etc/modules-load.d/zfs.conf
 /etc/systemd/system-preset/50-zfs.preset
-/usr/lib/systemd/system-generators/zfs-mount-generator
+/lib/systemd/system-generators/zfs-mount-generator
 %{systemdunitdir}/zfs.target
 %{systemdunitdir}/zfs-import.target
 %{systemdunitdir}/zfs-import-cache.service
