@@ -8,7 +8,8 @@
 # Conditional build:
 %bcond_without	kernel		# don't build kernel modules
 %bcond_without	userspace	# don't build userspace programs
-%bcond_without	python		# CPython module
+%bcond_without	python2		# CPython 2.x module
+%bcond_without	python3		# CPython 3.x module
 %bcond_with	verbose		# verbose build (V=1)
 #
 # The goal here is to have main, userspace, package built once with
@@ -27,7 +28,7 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	_rc	rc2
+%define	_rc	rc3
 %define	rel	0.%{_rc}.1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
@@ -39,7 +40,7 @@ License:	CDDL
 Group:		Applications/System
 #Source0:	https://github.com/zfsonlinux/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
 Source0:	https://github.com/zfsonlinux/zfs/archive/zfs-%{version}-%{_rc}/%{pname}-%{version}-%{_rc}.tar.gz
-# Source0-md5:	c32e6373ae1b4524f25e97917a1fa68a
+# Source0-md5:	430cd26a1d246029017e9250eb00f8f2
 Patch0:		x32.patch
 Patch1:		am.patch
 URL:		http://zfsonlinux.org/
@@ -55,10 +56,14 @@ BuildRequires:	libblkid-devel
 BuildRequires:	libselinux-devel
 BuildRequires:	libuuid-devel
 BuildRequires:	zlib-devel
-%if %{with python}
+%if %{with python2}
 BuildRequires:	rpm-pythonprov
 BuildRequires:	python-modules
 BuildRequires:	python-setuptools
+%endif
+%if %{with python3}
+BuildRequires:	python3-modules
+BuildRequires:	python3-setuptools
 %endif
 %endif
 Requires:	%{pname}-libs = %{version}-%{release}
@@ -145,6 +150,15 @@ Group:		Libraries/Python
 Requires:	%{pname}-libs = %{version}-%{release}
 
 %description -n python-pyzfs
+Wrapper for libzfs_core C library.
+
+%package -n python3-pyzfs
+Summary:	Wrapper for libzfs_core C library
+License:	Apache v2.0
+Group:		Libraries/Python
+Requires:	%{pname}-libs = %{version}-%{release}
+
+%description -n python3-pyzfs
 Wrapper for libzfs_core C library.
 
 %package -n kernel-zfs-common-devel
@@ -265,9 +279,15 @@ p=`pwd`\
 %{__make} \
 	%{?with_verbose:V=1}
 
-%if %{with python}
+%if %{with python2}
 cd contrib/pyzfs
-%py_build %{?with_tests:test}
+%py_build
+cd ../..
+%endif
+
+%if %{with python3}
+cd contrib/pyzfs
+%py3_build
 cd ../..
 %endif
 %endif
@@ -287,7 +307,7 @@ cp -a installed/* $RPM_BUILD_ROOT
 	DESTDIR=$RPM_BUILD_ROOT \
 	DEFAULT_INIT_DIR=/etc/rc.d/init.d
 
-%if %{with python}
+%if %{with python2}
 %{__rm} -rf $RPM_BUILD_ROOT%{py_sitescriptdir}
 cd contrib/pyzfs
 %py_install
@@ -298,6 +318,14 @@ cd contrib/pyzfs
 %py_postclean
 cd ../..
 %{__rm} -r $RPM_BUILD_ROOT%{py_sitescriptdir}/libzfs_core/test
+%endif
+
+%if %{with python3}
+%{__rm} -rf $RPM_BUILD_ROOT{%{py3_sitescriptdir},/usr/local/share/python3*}
+cd contrib/pyzfs
+%py3_install
+cd ../..
+%{__rm} -r $RPM_BUILD_ROOT%{py3_sitescriptdir}/libzfs_core/test
 %endif
 
 install -d $RPM_BUILD_ROOT%{_pkgconfigdir}
@@ -323,9 +351,9 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644,root,root,755)
 %doc AUTHORS COPYRIGHT LICENSE README.md
 %attr(755,root,root) /sbin/mount.zfs
-%attr(755,root,root) %{_bindir}/arc_summary.py
-%attr(755,root,root) %{_bindir}/arcstat.py
-%attr(755,root,root) %{_bindir}/dbufstat.py
+%attr(755,root,root) %{_bindir}/arc_summary
+%attr(755,root,root) %{_bindir}/arcstat
+%attr(755,root,root) %{_bindir}/dbufstat
 %attr(755,root,root) %{_bindir}/zgenhostid
 %attr(755,root,root) %{_sbindir}/fsck.zfs
 %attr(755,root,root) %{_sbindir}/zdb
@@ -445,12 +473,20 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-load-key.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-needshutdown.sh
 
-%if %{with python}
+%if %{with python2}
 %files -n python-pyzfs
 %defattr(644,root,root,755)
 %doc contrib/pyzfs/README
 %{py_sitescriptdir}/libzfs_core
 %{py_sitescriptdir}/pyzfs-*-py*.egg-info
+%endif
+
+%if %{with python3}
+%files -n python3-pyzfs
+%defattr(644,root,root,755)
+%doc contrib/pyzfs/README
+%{py3_sitescriptdir}/libzfs_core
+%{py3_sitescriptdir}/pyzfs-*-py*.egg-info
 %endif
 %endif
 
