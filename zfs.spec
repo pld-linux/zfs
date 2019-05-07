@@ -28,8 +28,8 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	_rc	rc3
-%define	rel	0.%{_rc}.3
+%define	_rc	rc4
+%define	rel	0.%{_rc}.1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
@@ -40,10 +40,9 @@ License:	CDDL
 Group:		Applications/System
 #Source0:	https://github.com/zfsonlinux/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
 Source0:	https://github.com/zfsonlinux/zfs/archive/zfs-%{version}-%{_rc}/%{pname}-%{version}-%{_rc}.tar.gz
-# Source0-md5:	430cd26a1d246029017e9250eb00f8f2
+# Source0-md5:	9630df590251ad13a347b10fd46c0922
 Patch0:		x32.patch
 Patch1:		am.patch
-Patch2:		kernel-5.0.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -257,7 +256,6 @@ p=`pwd`\
 %setup -q -n %{pname}-zfs-%{version}-%{_rc}
 %patch0 -p1
 %patch1 -p1
-%patch2 -p1
 
 %build
 %{__libtoolize}
@@ -470,6 +468,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/module-setup.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/mount-zfs.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/parse-zfs.sh
+%attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-env-bootfs.service
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-generator.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-lib.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-load-key.sh
