@@ -43,6 +43,7 @@ Source0:	https://github.com/zfsonlinux/zfs/archive/zfs-%{version}-%{_rc}/%{pname
 # Source0-md5:	9630df590251ad13a347b10fd46c0922
 Patch0:		x32.patch
 Patch1:		am.patch
+Patch2:		highmem.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -256,6 +257,7 @@ p=`pwd`\
 %setup -q -n %{pname}-zfs-%{version}-%{_rc}
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 %build
 %{__libtoolize}
