@@ -44,6 +44,7 @@ Source0:	https://github.com/zfsonlinux/zfs/archive/zfs-%{version}-%{_rc}/%{pname
 Patch0:		x32.patch
 Patch1:		am.patch
 Patch2:		highmem.patch
+Patch3:		zfs-sh.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -53,17 +54,26 @@ BuildRequires:	rpmbuild(macros) >= 1.714
 %{expand:%buildrequires_kernel kernel%%{_alt_kernel}-module-build >= 3:2.6.20.2}
 %endif
 %if %{with userspace}
+# only for mmap_libaio test command
+#BuildRequires:	libaio-devel
 BuildRequires:	libblkid-devel
 BuildRequires:	libselinux-devel
+# if xdr gets removed from glibc
+#BuildRequires:	libtirpc-devel
 BuildRequires:	libuuid-devel
+BuildRequires:	openssl-devel
+BuildRequires:	pkgconfig
+BuildRequires:	udev-devel
 BuildRequires:	zlib-devel
 %if %{with python2}
 BuildRequires:	rpm-pythonprov
-BuildRequires:	python-modules
+BuildRequires:	python-cffi
+BuildRequires:	python-modules >= 1:2.6
 BuildRequires:	python-setuptools
 %endif
 %if %{with python3}
-BuildRequires:	python3-modules
+BuildRequires:	python3-cffi
+BuildRequires:	python3-modules >= 1:3.4
 BuildRequires:	python3-setuptools
 %endif
 %endif
@@ -258,6 +268,7 @@ p=`pwd`\
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 %build
 %{__libtoolize}
@@ -351,7 +362,7 @@ rm -rf $RPM_BUILD_ROOT
 %if %{with userspace}
 %files
 %defattr(644,root,root,755)
-%doc AUTHORS COPYRIGHT LICENSE README.md
+%doc AUTHORS COPYRIGHT LICENSE NEWS NOTICE README.md
 %attr(755,root,root) /sbin/mount.zfs
 %attr(755,root,root) %{_bindir}/arc_summary
 %attr(755,root,root) %{_bindir}/arcstat
