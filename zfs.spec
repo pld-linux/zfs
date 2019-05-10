@@ -66,7 +66,6 @@ BuildRequires:	pkgconfig
 BuildRequires:	udev-devel
 BuildRequires:	zlib-devel
 %if %{with python2}
-BuildRequires:	rpm-pythonprov
 BuildRequires:	python-cffi
 BuildRequires:	python-modules >= 1:2.6
 BuildRequires:	python-setuptools
@@ -75,6 +74,9 @@ BuildRequires:	python-setuptools
 BuildRequires:	python3-cffi
 BuildRequires:	python3-modules >= 1:3.4
 BuildRequires:	python3-setuptools
+%endif
+%if %{with python2} || %{with python3}
+BuildRequires:	rpm-pythonprov
 %endif
 %endif
 Requires:	%{pname}-libs = %{version}-%{release}
@@ -155,22 +157,30 @@ ZFS support for Dracut.
 Obsługa ZFS-a dla Dracuta.
 
 %package -n python-pyzfs
-Summary:	Wrapper for libzfs_core C library
+Summary:	Python 2 wrapper for libzfs_core C library
+Summary(pl.UTF-8):	Interfejs Pythona 2 do biblioteki C libzfs_core
 License:	Apache v2.0
 Group:		Libraries/Python
 Requires:	%{pname}-libs = %{version}-%{release}
 
 %description -n python-pyzfs
-Wrapper for libzfs_core C library.
+Python 2 wrapper for libzfs_core C library.
+
+%description -n python-pyzfs -l pl.UTF-8
+Interfejs Pythona 2 do biblioteki C libzfs_core.
 
 %package -n python3-pyzfs
-Summary:	Wrapper for libzfs_core C library
+Summary:	Python 3 wrapper for libzfs_core C library
+Summary(pl.UTF-8):	Interfejs Pythona 3 do biblioteki C libzfs_core
 License:	Apache v2.0
 Group:		Libraries/Python
 Requires:	%{pname}-libs = %{version}-%{release}
 
 %description -n python3-pyzfs
-Wrapper for libzfs_core C library.
+Python 3 wrapper for libzfs_core C library.
+
+%description -n python3-pyzfs -l pl.UTF-8
+Interfejs Pythona 3 do biblioteki C libzfs_core.
 
 %package -n kernel-zfs-common-devel
 Summary:	ZFS Linux kernel headers
