@@ -42,7 +42,7 @@ Source0:	https://github.com/zfsonlinux/zfs/archive/zfs-%{version}/%{pname}-%{ver
 # Source0-md5:	db6618a09f6494e1126b14a1302f77c8
 Patch0:		x32.patch
 Patch1:		am.patch
-Patch2:		%{name}-sh.patch
+Patch2:		%{pname}-sh.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
