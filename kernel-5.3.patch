@@ -1,0 +1,550 @@
+From 041205afee7e151a0ac10c9b5314186cf65417dc Mon Sep 17 00:00:00 2001
+From: Brian Behlendorf <behlendorf1@llnl.gov>
+Date: Fri, 12 Jul 2019 13:27:24 -0700
+Subject: [PATCH] Linux 5.3 compat: rw_semaphore owner
+
+Commit https://github.com/torvalds/linux/commit/94a9717b updated the
+rwsem's owner field to contain additional flags describing the rwsem's
+state.  Rather then update the wrappers to mask out these bits, the
+code no longer relies on the owner stored by the kernel.  This does
+increase the size of a krwlock_t but it makes the implementation
+less sensitive to future kernel changes.
+
+Reviewed-by: Tony Hutter <hutter2@llnl.gov>
+Reviewed-by: Tomohiro Kusumi <kusumi.tomohiro@gmail.com>
+Signed-off-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Closes #9029
+---
+ include/spl/sys/rwlock.h | 68 +++-------------------------------------
+ module/spl/spl-rwlock.c  |  3 --
+ 2 files changed, 5 insertions(+), 66 deletions(-)
+
+diff --git a/include/spl/sys/rwlock.h b/include/spl/sys/rwlock.h
+index 408defac20d..5e052b532a4 100644
+--- a/include/spl/sys/rwlock.h
++++ b/include/spl/sys/rwlock.h
+@@ -78,15 +78,9 @@ typedef enum {
+ 	RW_READER	= 2
+ } krw_t;
+ 
+-/*
+- * If CONFIG_RWSEM_SPIN_ON_OWNER is defined, rw_semaphore will have an owner
+- * field, so we don't need our own.
+- */
+ typedef struct {
+ 	struct rw_semaphore rw_rwlock;
+-#ifndef CONFIG_RWSEM_SPIN_ON_OWNER
+ 	kthread_t *rw_owner;
+-#endif
+ #ifdef CONFIG_LOCKDEP
+ 	krw_type_t	rw_type;
+ #endif /* CONFIG_LOCKDEP */
+@@ -97,31 +91,19 @@ typedef struct {
+ static inline void
+ spl_rw_set_owner(krwlock_t *rwp)
+ {
+-/*
+- * If CONFIG_RWSEM_SPIN_ON_OWNER is defined, down_write, up_write,
+- * downgrade_write and __init_rwsem will set/clear owner for us.
+- */
+-#ifndef CONFIG_RWSEM_SPIN_ON_OWNER
+ 	rwp->rw_owner = current;
+-#endif
+ }
+ 
+ static inline void
+ spl_rw_clear_owner(krwlock_t *rwp)
+ {
+-#ifndef CONFIG_RWSEM_SPIN_ON_OWNER
+ 	rwp->rw_owner = NULL;
+-#endif
+ }
+ 
+ static inline kthread_t *
+ rw_owner(krwlock_t *rwp)
+ {
+-#ifdef CONFIG_RWSEM_SPIN_ON_OWNER
+-	return (SEM(rwp)->owner);
+-#else
+ 	return (rwp->rw_owner);
+-#endif
+ }
+ 
+ #ifdef CONFIG_LOCKDEP
+@@ -148,62 +130,22 @@ spl_rw_lockdep_on_maybe(krwlock_t *rwp)			\
+ #define	spl_rw_lockdep_on_maybe(rwp)
+ #endif /* CONFIG_LOCKDEP */
+ 
+-
+ static inline int
+-RW_WRITE_HELD(krwlock_t *rwp)
++RW_LOCK_HELD(krwlock_t *rwp)
+ {
+-	return (rw_owner(rwp) == current);
++	return (spl_rwsem_is_locked(SEM(rwp)));
+ }
+ 
+ static inline int
+-RW_LOCK_HELD(krwlock_t *rwp)
++RW_WRITE_HELD(krwlock_t *rwp)
+ {
+-	return (spl_rwsem_is_locked(SEM(rwp)));
++	return (rw_owner(rwp) == current);
+ }
+ 
+ static inline int
+ RW_READ_HELD(krwlock_t *rwp)
+ {
+-	if (!RW_LOCK_HELD(rwp))
+-		return (0);
+-
+-	/*
+-	 * rw_semaphore cheat sheet:
+-	 *
+-	 * < 3.16:
+-	 * There's no rw_semaphore.owner, so use rwp.owner instead.
+-	 * If rwp.owner == NULL then it's a reader
+-	 *
+-	 * 3.16 - 4.7:
+-	 * rw_semaphore.owner added (https://lwn.net/Articles/596656/)
+-	 * and CONFIG_RWSEM_SPIN_ON_OWNER introduced.
+-	 * If rw_semaphore.owner == NULL then it's a reader
+-	 *
+-	 * 4.8 - 4.16.16:
+-	 * RWSEM_READER_OWNED added as an internal #define.
+-	 * (https://lore.kernel.org/patchwork/patch/678590/)
+-	 * If rw_semaphore.owner == 1 then it's a reader
+-	 *
+-	 * 4.16.17 - 4.19:
+-	 * RWSEM_OWNER_UNKNOWN introduced as ((struct task_struct *)-1L)
+-	 * (https://do-db2.lkml.org/lkml/2018/5/15/985)
+-	 * If rw_semaphore.owner == 1 then it's a reader.
+-	 *
+-	 * 4.20+:
+-	 * RWSEM_OWNER_UNKNOWN changed to ((struct task_struct *)-2L)
+-	 * (https://lkml.org/lkml/2018/9/6/986)
+-	 * If rw_semaphore.owner & 1 then it's a reader, and also the reader's
+-	 * task_struct may be embedded in rw_semaphore->owner.
+-	 */
+-#if	defined(CONFIG_RWSEM_SPIN_ON_OWNER) && defined(RWSEM_OWNER_UNKNOWN)
+-	if (RWSEM_OWNER_UNKNOWN == (struct task_struct *)-2L) {
+-		/* 4.20+ kernels with CONFIG_RWSEM_SPIN_ON_OWNER */
+-		return ((unsigned long) SEM(rwp)->owner & 1);
+-	}
+-#endif
+-
+-	/* < 4.20 kernel or !CONFIG_RWSEM_SPIN_ON_OWNER */
+-	return (rw_owner(rwp) == NULL || (unsigned long) rw_owner(rwp) == 1);
++	return (RW_LOCK_HELD(rwp) && rw_owner(rwp) == NULL);
+ }
+ 
+ /*
+diff --git a/module/spl/spl-rwlock.c b/module/spl/spl-rwlock.c
+index 86727ed1957..886e16924e6 100644
+--- a/module/spl/spl-rwlock.c
++++ b/module/spl/spl-rwlock.c
+@@ -119,9 +119,6 @@ rwsem_tryupgrade(struct rw_semaphore *rwsem)
+ 	if (__rwsem_tryupgrade(rwsem)) {
+ 		rwsem_release(&rwsem->dep_map, 1, _RET_IP_);
+ 		rwsem_acquire(&rwsem->dep_map, 0, 1, _RET_IP_);
+-#ifdef CONFIG_RWSEM_SPIN_ON_OWNER
+-		rwsem->owner = current;
+-#endif
+ 		return (1);
+ 	}
+ 	return (0);
+From e7a99dab2b065ac2f8736a65d1b226d21754d771 Mon Sep 17 00:00:00 2001
+From: Brian Behlendorf <behlendorf1@llnl.gov>
+Date: Fri, 12 Jul 2019 14:06:36 -0700
+Subject: [PATCH] Linux 5.3 compat: retire rw_tryupgrade()
+
+The Linux kernel's rwsem's have never provided an interface to
+allow a reader to be upgraded to a writer.  Historically, this
+functionality has been implemented by a SPL wrapper function.
+However, this approach depends on internal knowledge of the
+rw_semaphore and is therefore rather brittle.
+
+Since the ZFS code must always be able to fallback to rw_exit()
+and rw_enter() when an rw_tryupgrade() fails; this functionality
+isn't critical.  Furthermore, the only potentially performance
+sensitive consumer is dmu_zfetch() and no decrease in performance
+was observed with this change applied.  See the PR comments for
+additional testing details.
+
+Therefore, it is being retired to make the build more robust and
+to simplify the rwlock implementation.
+
+Reviewed-by: Tony Hutter <hutter2@llnl.gov>
+Reviewed-by: Tomohiro Kusumi <kusumi.tomohiro@gmail.com>
+Signed-off-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Closes #9029
+---
+ include/spl/sys/rwlock.h |  60 +++--------------------
+ module/spl/spl-rwlock.c  | 101 ---------------------------------------
+ 2 files changed, 7 insertions(+), 154 deletions(-)
+
+diff --git a/include/spl/sys/rwlock.h b/include/spl/sys/rwlock.h
+index 5e052b532a4..89e02fa8f04 100644
+--- a/include/spl/sys/rwlock.h
++++ b/include/spl/sys/rwlock.h
+@@ -29,43 +29,6 @@
+ #include <linux/rwsem.h>
+ #include <linux/sched.h>
+ 
+-/* Linux kernel compatibility */
+-#if defined(CONFIG_PREEMPT_RT_FULL)
+-#define	SPL_RWSEM_SINGLE_READER_VALUE	(1)
+-#define	SPL_RWSEM_SINGLE_WRITER_VALUE	(0)
+-#elif defined(CONFIG_RWSEM_GENERIC_SPINLOCK)
+-#define	SPL_RWSEM_SINGLE_READER_VALUE	(1)
+-#define	SPL_RWSEM_SINGLE_WRITER_VALUE	(-1)
+-#elif defined(RWSEM_ACTIVE_MASK)
+-#define	SPL_RWSEM_SINGLE_READER_VALUE	(RWSEM_ACTIVE_READ_BIAS)
+-#define	SPL_RWSEM_SINGLE_WRITER_VALUE	(RWSEM_ACTIVE_WRITE_BIAS)
+-#endif
+-
+-/* Linux 3.16 changed activity to count for rwsem-spinlock */
+-#if defined(CONFIG_PREEMPT_RT_FULL)
+-#define	RWSEM_COUNT(sem)	sem->read_depth
+-#elif defined(HAVE_RWSEM_ACTIVITY)
+-#define	RWSEM_COUNT(sem)	sem->activity
+-/* Linux 4.8 changed count to an atomic_long_t for !rwsem-spinlock */
+-#elif defined(HAVE_RWSEM_ATOMIC_LONG_COUNT)
+-#define	RWSEM_COUNT(sem)	atomic_long_read(&(sem)->count)
+-#else
+-#define	RWSEM_COUNT(sem)	sem->count
+-#endif
+-
+-#if defined(RWSEM_SPINLOCK_IS_RAW)
+-#define	spl_rwsem_lock_irqsave(lk, fl)		raw_spin_lock_irqsave(lk, fl)
+-#define	spl_rwsem_unlock_irqrestore(lk, fl)	\
+-    raw_spin_unlock_irqrestore(lk, fl)
+-#define	spl_rwsem_trylock_irqsave(lk, fl)	raw_spin_trylock_irqsave(lk, fl)
+-#else
+-#define	spl_rwsem_lock_irqsave(lk, fl)		spin_lock_irqsave(lk, fl)
+-#define	spl_rwsem_unlock_irqrestore(lk, fl)	spin_unlock_irqrestore(lk, fl)
+-#define	spl_rwsem_trylock_irqsave(lk, fl)	spin_trylock_irqsave(lk, fl)
+-#endif /* RWSEM_SPINLOCK_IS_RAW */
+-
+-#define	spl_rwsem_is_locked(rwsem)		rwsem_is_locked(rwsem)
+-
+ typedef enum {
+ 	RW_DRIVER	= 2,
+ 	RW_DEFAULT	= 4,
+@@ -133,7 +96,7 @@ spl_rw_lockdep_on_maybe(krwlock_t *rwp)			\
+ static inline int
+ RW_LOCK_HELD(krwlock_t *rwp)
+ {
+-	return (spl_rwsem_is_locked(SEM(rwp)));
++	return (rwsem_is_locked(SEM(rwp)));
+ }
+ 
+ static inline int
+@@ -170,6 +133,12 @@ RW_READ_HELD(krwlock_t *rwp)
+  */
+ #define	rw_destroy(rwp)		((void) 0)
+ 
++/*
++ * Upgrading a rwsem from a reader to a writer is not supported by the
++ * Linux kernel.  The lock must be dropped and reacquired as a writer.
++ */
++#define	rw_tryupgrade(rwp)	RW_WRITE_HELD(rwp)
++
+ #define	rw_tryenter(rwp, rw)						\
+ ({									\
+ 	int _rc_ = 0;							\
+@@ -228,24 +197,9 @@ RW_READ_HELD(krwlock_t *rwp)
+ 	spl_rw_lockdep_on_maybe(rwp);					\
+ })
+ 
+-#define	rw_tryupgrade(rwp)						\
+-({									\
+-	int _rc_ = 0;							\
+-									\
+-	if (RW_WRITE_HELD(rwp)) {					\
+-		_rc_ = 1;						\
+-	} else {							\
+-		spl_rw_lockdep_off_maybe(rwp);				\
+-		if ((_rc_ = rwsem_tryupgrade(SEM(rwp))))		\
+-			spl_rw_set_owner(rwp);				\
+-		spl_rw_lockdep_on_maybe(rwp);				\
+-	}								\
+-	_rc_;								\
+-})
+ /* END CSTYLED */
+ 
+ int spl_rw_init(void);
+ void spl_rw_fini(void);
+-int rwsem_tryupgrade(struct rw_semaphore *rwsem);
+ 
+ #endif /* _SPL_RWLOCK_H */
+diff --git a/module/spl/spl-rwlock.c b/module/spl/spl-rwlock.c
+index 886e16924e6..10f7c38db4e 100644
+--- a/module/spl/spl-rwlock.c
++++ b/module/spl/spl-rwlock.c
+@@ -24,106 +24,5 @@
+  *  Solaris Porting Layer (SPL) Reader/Writer Lock Implementation.
+  */
+ 
+-#include <sys/rwlock.h>
+-#include <linux/module.h>
+-
+-#if defined(CONFIG_PREEMPT_RT_FULL)
+-
+-#include <linux/rtmutex.h>
+-#define	RT_MUTEX_OWNER_MASKALL	1UL
+-
+-static int
+-__rwsem_tryupgrade(struct rw_semaphore *rwsem)
+-{
+-#if defined(READER_BIAS) && defined(WRITER_BIAS)
+-	/*
+-	 * After the 4.9.20-rt16 kernel the realtime patch series lifted the
+-	 * single reader restriction.  While this could be accommodated by
+-	 * adding additional compatibility code assume the rwsem can never
+-	 * be upgraded.  All caller must already cleanly handle this case.
+-	 */
+-	return (0);
+-#else
+-	ASSERT((struct task_struct *)
+-	    ((unsigned long)rwsem->lock.owner & ~RT_MUTEX_OWNER_MASKALL) ==
+-	    current);
+-
+-	/*
+-	 * Prior to 4.9.20-rt16 kernel the realtime patch series, rwsem is
+-	 * implemented as a single mutex held by readers and writers alike.
+-	 * However, this implementation would prevent a thread from taking
+-	 * a read lock twice, as the mutex would already be locked on
+-	 * the second attempt. Therefore the implementation allows a
+-	 * single thread to take a rwsem as read lock multiple times
+-	 * tracking that nesting as read_depth counter.
+-	 */
+-	if (rwsem->read_depth <= 1) {
+-		/*
+-		 * In case, the current thread has not taken the lock
+-		 * more than once as read lock, we can allow an
+-		 * upgrade to a write lock. rwsem_rt.h implements
+-		 * write locks as read_depth == 0.
+-		 */
+-		rwsem->read_depth = 0;
+-		return (1);
+-	}
+-	return (0);
+-#endif
+-}
+-#elif defined(CONFIG_RWSEM_GENERIC_SPINLOCK)
+-static int
+-__rwsem_tryupgrade(struct rw_semaphore *rwsem)
+-{
+-	int ret = 0;
+-	unsigned long flags;
+-	spl_rwsem_lock_irqsave(&rwsem->wait_lock, flags);
+-	if (RWSEM_COUNT(rwsem) == SPL_RWSEM_SINGLE_READER_VALUE &&
+-	    list_empty(&rwsem->wait_list)) {
+-		ret = 1;
+-		RWSEM_COUNT(rwsem) = SPL_RWSEM_SINGLE_WRITER_VALUE;
+-	}
+-	spl_rwsem_unlock_irqrestore(&rwsem->wait_lock, flags);
+-	return (ret);
+-}
+-#elif defined(RWSEM_ACTIVE_MASK)
+-#if defined(HAVE_RWSEM_ATOMIC_LONG_COUNT)
+-static int
+-__rwsem_tryupgrade(struct rw_semaphore *rwsem)
+-{
+-	long val;
+-	val = atomic_long_cmpxchg(&rwsem->count, SPL_RWSEM_SINGLE_READER_VALUE,
+-	    SPL_RWSEM_SINGLE_WRITER_VALUE);
+-	return (val == SPL_RWSEM_SINGLE_READER_VALUE);
+-}
+-#else
+-static int
+-__rwsem_tryupgrade(struct rw_semaphore *rwsem)
+-{
+-	typeof(rwsem->count) val;
+-	val = cmpxchg(&rwsem->count, SPL_RWSEM_SINGLE_READER_VALUE,
+-	    SPL_RWSEM_SINGLE_WRITER_VALUE);
+-	return (val == SPL_RWSEM_SINGLE_READER_VALUE);
+-}
+-#endif
+-#else
+-static int
+-__rwsem_tryupgrade(struct rw_semaphore *rwsem)
+-{
+-	return (0);
+-}
+-#endif
+-
+-int
+-rwsem_tryupgrade(struct rw_semaphore *rwsem)
+-{
+-	if (__rwsem_tryupgrade(rwsem)) {
+-		rwsem_release(&rwsem->dep_map, 1, _RET_IP_);
+-		rwsem_acquire(&rwsem->dep_map, 0, 1, _RET_IP_);
+-		return (1);
+-	}
+-	return (0);
+-}
+-EXPORT_SYMBOL(rwsem_tryupgrade);
+-
+ int spl_rw_init(void) { return 0; }
+ void spl_rw_fini(void) { }
+From a9ebdfdd43204b8f907c5395cd68b2d745544730 Mon Sep 17 00:00:00 2001
+From: Tony Hutter <hutter2@llnl.gov>
+Date: Wed, 21 Aug 2019 09:29:23 -0700
+Subject: [PATCH] Linux 5.3: Fix switch() fall though compiler errors
+
+Fix some switch() fall-though compiler errors:
+
+    abd.c:1504:9: error: this statement may fall through
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Tony Hutter <hutter2@llnl.gov>
+Closes #9170
+---
+ module/lua/llex.c                   | 9 ++++++---
+ module/zfs/abd.c                    | 4 ++++
+ module/zfs/vdev_raidz_math_scalar.c | 1 +
+ 3 files changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/module/lua/llex.c b/module/lua/llex.c
+index 8760155d054..50c301f599f 100644
+--- a/module/lua/llex.c
++++ b/module/lua/llex.c
+@@ -431,9 +431,12 @@ static int llex (LexState *ls, SemInfo *seminfo) {
+         if (sep >= 0) {
+           read_long_string(ls, seminfo, sep);
+           return TK_STRING;
+-        }
+-        else if (sep == -1) return '[';
+-        else lexerror(ls, "invalid long string delimiter", TK_STRING);
++        } else if (sep == -1) {
++		return '[';
++        } else {
++		lexerror(ls, "invalid long string delimiter", TK_STRING);
++		break;
++	}
+       }
+       case '=': {
+         next(ls);
+diff --git a/module/zfs/abd.c b/module/zfs/abd.c
+index 9f688d9bc2b..8b2514404a8 100644
+--- a/module/zfs/abd.c
++++ b/module/zfs/abd.c
+@@ -1408,8 +1408,10 @@ abd_raidz_gen_iterate(abd_t **cabds, abd_t *dabd,
+ 		switch (parity) {
+ 			case 3:
+ 				len = MIN(caiters[2].iter_mapsize, len);
++				/* falls through */
+ 			case 2:
+ 				len = MIN(caiters[1].iter_mapsize, len);
++				/* falls through */
+ 			case 1:
+ 				len = MIN(caiters[0].iter_mapsize, len);
+ 		}
+@@ -1499,9 +1501,11 @@ abd_raidz_rec_iterate(abd_t **cabds, abd_t **tabds,
+ 			case 3:
+ 				len = MIN(xiters[2].iter_mapsize, len);
+ 				len = MIN(citers[2].iter_mapsize, len);
++				/* falls through */
+ 			case 2:
+ 				len = MIN(xiters[1].iter_mapsize, len);
+ 				len = MIN(citers[1].iter_mapsize, len);
++				/* falls through */
+ 			case 1:
+ 				len = MIN(xiters[0].iter_mapsize, len);
+ 				len = MIN(citers[0].iter_mapsize, len);
+diff --git a/module/zfs/vdev_raidz_math_scalar.c b/module/zfs/vdev_raidz_math_scalar.c
+index a693bff63ff..cd742e146ca 100644
+--- a/module/zfs/vdev_raidz_math_scalar.c
++++ b/module/zfs/vdev_raidz_math_scalar.c
+@@ -142,6 +142,7 @@ static const struct {
+ 		a.b[6] = mul_lt[a.b[6]];				\
+ 		a.b[5] = mul_lt[a.b[5]];				\
+ 		a.b[4] = mul_lt[a.b[4]];				\
++		/* falls through */					\
+ 	case 4:								\
+ 		a.b[3] = mul_lt[a.b[3]];				\
+ 		a.b[2] = mul_lt[a.b[2]];				\
+From ff4b68eedc307e6e9b7f3890b809cbb0e9d73856 Mon Sep 17 00:00:00 2001
+From: Dominic Pearson <dsp@technoanimal.net>
+Date: Tue, 20 Aug 2019 00:22:52 +0200
+Subject: [PATCH] Linux 5.3 compat: Makefile subdir-m no longer supported
+
+Uses obj-m instead, due to kernel changes.
+
+See LKML: Masahiro Yamada, Tue, 6 Aug 2019 19:03:23 +0900
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Tony Hutter <hutter2@llnl.gov>
+Signed-off-by: Dominic Pearson <dsp@technoanimal.net>
+Closes #9169
+---
+ .gitignore         | 11 +++++++++++
+ module/Makefile.in | 24 ++++++++++++------------
+ 2 files changed, 23 insertions(+), 12 deletions(-)
+
+diff --git a/.gitignore b/.gitignore
+index 549fa59f382..ae9e22dfa7b 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -63,3 +63,14 @@ cscope.*
+ *.log
+ venv
+ 
++#
++# Module leftovers
++#
++/module/avl/zavl.mod
++/module/icp/icp.mod
++/module/lua/zlua.mod
++/module/nvpair/znvpair.mod
++/module/spl/spl.mod
++/module/unicode/zunicode.mod
++/module/zcommon/zcommon.mod
++/module/zfs/zfs.mod
+diff --git a/module/Makefile.in b/module/Makefile.in
+index eca7691aedb..7477dbe5650 100644
+--- a/module/Makefile.in
++++ b/module/Makefile.in
+@@ -1,11 +1,11 @@
+-subdir-m += avl
+-subdir-m += icp
+-subdir-m += lua
+-subdir-m += nvpair
+-subdir-m += spl
+-subdir-m += unicode
+-subdir-m += zcommon
+-subdir-m += zfs
++obj-m += avl/
++obj-m += icp/
++obj-m += lua/
++obj-m += nvpair/
++obj-m += spl/
++obj-m += unicode/
++obj-m += zcommon/
++obj-m += zfs/
+ 
+ INSTALL_MOD_DIR ?= extra
+ 
+@@ -60,14 +60,15 @@ modules_install:
+ modules_uninstall:
+ 	@# Uninstall the kernel modules
+ 	kmoddir=$(DESTDIR)$(INSTALL_MOD_PATH)/lib/modules/@LINUX_VERSION@
+-	list='$(subdir-m)'; for subdir in $$list; do \
+-		$(RM) -R $$kmoddir/$(INSTALL_MOD_DIR)/$$subdir; \
++	list='$(obj-m)'; for objdir in $$list; do \
++		$(RM) -R $$kmoddir/$(INSTALL_MOD_DIR)/$$objdir; \
+ 	done
+ 
+ distdir:
+-	list='$(subdir-m)'; for subdir in $$list; do \
+-		(cd @top_srcdir@/module && find $$subdir -name '*.c' -o -name '*.h' -o -name '*.S' |\
+-		xargs cp --parents -t $$distdir); \
++	list='$(obj-m)'; for objdir in $$list; do \
++		(cd @top_srcdir@/module && find $$objdir \
++		-name '*.c' -o -name '*.h' -o -name '*.S' | \
++		xargs cp --parents -t @abs_top_builddir@/module/$$distdir); \
+ 	done
+ 
+ distclean maintainer-clean: clean
