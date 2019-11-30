@@ -28,22 +28,21 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	5
+%define	rel	1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	0.8.1
+Version:	0.8.2
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
 #Source0:	https://github.com/zfsonlinux/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
 Source0:	https://github.com/zfsonlinux/zfs/archive/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	db6618a09f6494e1126b14a1302f77c8
+# Source0-md5:	28a63a26b93c5402d8610ac93fa317b7
 Patch0:		x32.patch
 Patch1:		am.patch
 Patch2:		%{pname}-sh.patch
-Patch3:		kernel-5.3.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -277,7 +276,6 @@ p=`pwd`\
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
-%patch3 -p1
 
 %build
 %{__libtoolize}
@@ -378,6 +376,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/arcstat
 %attr(755,root,root) %{_bindir}/dbufstat
 %attr(755,root,root) %{_bindir}/zgenhostid
+%attr(755,root,root) %{_bindir}/zvol_wait
 %attr(755,root,root) %{_sbindir}/fsck.zfs
 %attr(755,root,root) %{_sbindir}/zdb
 %attr(755,root,root) %{_sbindir}/zed
@@ -410,6 +409,8 @@ rm -rf $RPM_BUILD_ROOT
 %{systemdunitdir}/zfs-import-scan.service
 %{systemdunitdir}/zfs-mount.service
 %{systemdunitdir}/zfs-share.service
+%{systemdunitdir}/zfs-volume-wait.service
+%{systemdunitdir}/zfs-volumes.target
 %{systemdunitdir}/zfs-zed.service
 %attr(755,root,root) /lib/udev/vdev_id
 %attr(755,root,root) /lib/udev/zvol_id
@@ -425,6 +426,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_datadir}/zfs/*.sh
 %{_mandir}/man1/zhack.1*
 %{_mandir}/man1/ztest.1*
+%{_mandir}/man1/zvol_wait.1*
 %{_mandir}/man5/spl-module-parameters.5*
 %{_mandir}/man5/vdev_id.conf.5*
 %{_mandir}/man5/zfs-events.5*
