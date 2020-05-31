@@ -33,19 +33,17 @@ exit 1
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	0.8.3
+Version:	0.8.4
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
-#Source0:	https://github.com/zfsonlinux/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-Source0:	https://github.com/zfsonlinux/zfs/archive/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	e6083c858158a3000bf473e62835ac88
+Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
+# Source0-md5:	f0c203c59c4fcd44187a64758707469f
 Patch0:		x32.patch
 Patch1:		am.patch
 Patch2:		%{pname}-sh.patch
 Patch3:		link.patch
-Patch4:		kernel-5.6.patch
-URL:		http://zfsonlinux.org/
+URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
 BuildRequires:	libtool
@@ -274,12 +272,11 @@ p=`pwd`\
 %{?with_kernel:%{expand:%create_kernel_packages}}
 
 %prep
-%setup -q -n %{pname}-zfs-%{version}
+%setup -q -n %{pname}-%{version}
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
-%patch4 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python2(\s|$),#!%{__python}\1,' \
       cmd/arc_summary/arc_summary2
