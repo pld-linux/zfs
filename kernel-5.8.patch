@@ -1,0 +1,122 @@
+diff -urN zfs-0.8.4/config/kernel-kmem.m4 zfs-0.8.4-5.8/config/kernel-kmem.m4
+--- zfs-0.8.4/config/kernel-kmem.m4	1970-01-01 01:00:00.000000000 +0100
++++ zfs-0.8.4-5.8/config/kernel-kmem.m4	2020-08-16 20:47:36.079945075 +0200
+@@ -0,0 +1,24 @@
++dnl #
++dnl # 5.8 API,
++dnl # __vmalloc PAGE_KERNEL removal
++dnl #
++AC_DEFUN([ZFS_AC_KERNEL_SRC_VMALLOC_PAGE_KERNEL], [
++	ZFS_LINUX_TEST_SRC([__vmalloc], [
++		#include <linux/mm.h>
++		#include <linux/vmalloc.h>
++	],[
++		void *p __attribute__ ((unused));
++
++		p = __vmalloc(0, GFP_KERNEL, PAGE_KERNEL);
++	])
++])
++
++AC_DEFUN([ZFS_AC_KERNEL_VMALLOC_PAGE_KERNEL], [
++	AC_MSG_CHECKING([whether __vmalloc(ptr, flags, pageflags) is available])
++	ZFS_LINUX_TEST_RESULT([__vmalloc], [
++		AC_MSG_RESULT(yes)
++		AC_DEFINE(HAVE_VMALLOC_PAGE_KERNEL, 1, [__vmalloc page flags exists])
++	],[
++		AC_MSG_RESULT(no)
++	])
++])
+diff -ur zfs-0.8.4/aclocal.m4 zfs-0.8.4-5.8/aclocal.m4
+--- zfs-0.8.4/aclocal.m4	2020-05-05 18:56:50.832844255 +0200
++++ zfs-0.8.4-5.8/aclocal.m4	2020-08-16 20:47:51.756613733 +0200
+@@ -1503,6 +1503,7 @@
+ m4_include([config/kernel-invalidate-bdev-args.m4])
+ m4_include([config/kernel-is_owner_or_cap.m4])
+ m4_include([config/kernel-kmap-atomic-args.m4])
++m4_include([config/kernel-kmem.m4])
+ m4_include([config/kernel-kmem-cache.m4])
+ m4_include([config/kernel-kstrtoul.m4])
+ m4_include([config/kernel-ktime.m4])
+diff -ur zfs-0.8.4/config/kernel.m4 zfs-0.8.4-5.8/config/kernel.m4
+--- zfs-0.8.4/config/kernel.m4	2020-08-16 20:52:32.199984184 +0200
++++ zfs-0.8.4-5.8/config/kernel.m4	2020-08-16 20:48:47.436620888 +0200
+@@ -45,6 +45,7 @@
+ 	ZFS_AC_KERNEL_SRC_SCHED
+ 	ZFS_AC_KERNEL_SRC_USLEEP_RANGE
+ 	ZFS_AC_KERNEL_SRC_KMEM_CACHE
++	ZFS_AC_KERNEL_SRC_VMALLOC_PAGE_KERNEL
+ 	ZFS_AC_KERNEL_SRC_WAIT
+ 	ZFS_AC_KERNEL_SRC_INODE_TIMES
+ 	ZFS_AC_KERNEL_SRC_INODE_LOCK
+@@ -163,6 +164,7 @@
+ 	ZFS_AC_KERNEL_SCHED
+ 	ZFS_AC_KERNEL_USLEEP_RANGE
+ 	ZFS_AC_KERNEL_KMEM_CACHE
++	ZFS_AC_KERNEL_VMALLOC_PAGE_KERNEL
+ 	ZFS_AC_KERNEL_WAIT
+ 	ZFS_AC_KERNEL_INODE_TIMES
+ 	ZFS_AC_KERNEL_INODE_LOCK
+diff -ur zfs-0.8.4/include/spl/sys/kmem.h zfs-0.8.4-5.8/include/spl/sys/kmem.h
+--- zfs-0.8.4/include/spl/sys/kmem.h	2020-05-05 18:56:29.717370676 +0200
++++ zfs-0.8.4-5.8/include/spl/sys/kmem.h	2020-08-16 20:49:25.949959237 +0200
+@@ -170,6 +170,15 @@
+ extern void spl_kmem_free(const void *ptr, size_t sz);
+ 
+ /*
++ * 5.8 API change, pgprot_t argument removed.
++ */
++#ifdef HAVE_VMALLOC_PAGE_KERNEL
++#define	spl_vmalloc(size, flags)	__vmalloc(size, flags, PAGE_KERNEL)
++#else
++#define	spl_vmalloc(size, flags)	__vmalloc(size, flags)
++#endif
++
++/*
+  * The following functions are only available for internal use.
+  */
+ extern void *spl_kmem_alloc_impl(size_t size, int flags, int node);
+diff -ur zfs-0.8.4/module/spl/spl-kmem.c zfs-0.8.4-5.8/module/spl/spl-kmem.c
+--- zfs-0.8.4/module/spl/spl-kmem.c	2020-05-05 18:57:28.442960922 +0200
++++ zfs-0.8.4-5.8/module/spl/spl-kmem.c	2020-08-16 20:52:08.019980890 +0200
+@@ -172,16 +171,15 @@
+ 		 * kmem_zalloc() callers.
+ 		 *
+ 		 * For vmem_alloc() and vmem_zalloc() callers it is permissible
+-		 * to use __vmalloc().  However, in general use of __vmalloc()
+-		 * is strongly discouraged because a global lock must be
+-		 * acquired.  Contention on this lock can significantly
++		 * to use spl_vmalloc().  However, in general use of
++		 * spl_vmalloc() is strongly discouraged because a global lock
++		 * must be acquired.  Contention on this lock can significantly
+ 		 * impact performance so frequently manipulating the virtual
+ 		 * address space is strongly discouraged.
+ 		 */
+ 		if ((size > spl_kmem_alloc_max) || use_vmem) {
+ 			if (flags & KM_VMEM) {
+-				ptr = __vmalloc(size, lflags | __GFP_HIGHMEM,
+-				    PAGE_KERNEL);
++				ptr = spl_vmalloc(size, lflags | __GFP_HIGHMEM);
+ 			} else {
+ 				return (NULL);
+ 			}
+diff -ur zfs-0.8.4/module/spl/spl-kmem-cache.c zfs-0.8.4-5.8/module/spl/spl-kmem-cache.c
+--- zfs-0.8.4/module/spl/spl-kmem-cache.c	2020-05-05 18:57:28.442960922 +0200
++++ zfs-0.8.4-5.8/module/spl/spl-kmem-cache.c	2020-08-16 20:50:28.763300871 +0200
+@@ -203,7 +203,7 @@
+ 		ASSERT(ISP2(size));
+ 		ptr = (void *)__get_free_pages(lflags, get_order(size));
+ 	} else {
+-		ptr = __vmalloc(size, lflags | __GFP_HIGHMEM, PAGE_KERNEL);
++		ptr = spl_vmalloc(size, lflags | __GFP_HIGHMEM);
+ 	}
+ 
+ 	/* Resulting allocated memory will be page aligned */
+@@ -1242,7 +1242,7 @@
+ 	 * allocation.
+ 	 *
+ 	 * However, this can't be applied to KVM_VMEM due to a bug that
+-	 * __vmalloc() doesn't honor gfp flags in page table allocation.
++	 * spl_vmalloc() doesn't honor gfp flags in page table allocation.
+ 	 */
+ 	if (!(skc->skc_flags & KMC_VMEM)) {
+ 		rc = __spl_cache_grow(skc, flags | KM_NOSLEEP);

@@ -43,6 +43,7 @@ Patch0:		x32.patch
 Patch1:		am.patch
 Patch2:		%{pname}-sh.patch
 Patch3:		link.patch
+Patch4:		kernel-5.8.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -277,6 +278,7 @@ p=`pwd`\
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
+%patch4 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python2(\s|$),#!%{__python}\1,' \
       cmd/arc_summary/arc_summary2
