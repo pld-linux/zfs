@@ -1,0 +1,11 @@
+--- zfs-2.0.0/config/zfs-build.m4~	2020-10-08 18:41:58.000000000 +0200
++++ zfs-2.0.0/config/zfs-build.m4	2020-12-24 23:45:01.909714362 +0100
+@@ -479,7 +479,7 @@
+ 	AC_MSG_CHECKING([default init directory])
+ 	case "$VENDOR" in
+ 		freebsd)    initdir=$sysconfdir/rc.d  ;;
+-		*)          initdir=$sysconfdir/init.d;;
++		*)          initdir=$sysconfdir/rc.d/init.d;;
+ 	esac
+ 	AC_MSG_RESULT([$initdir])
+ 	AC_SUBST(initdir)

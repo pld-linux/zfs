@@ -28,21 +28,19 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	1
+%define	rel	0.1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	0.8.5
+Version:	2.0.0
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	905cc25c252999bd2049165eea90c975
-Patch0:		x32.patch
+# Source0-md5:	a6f2d1b87562d875d5b18f0580b8289f
+Patch0:		initdir.patch
 Patch1:		am.patch
-Patch2:		%{pname}-sh.patch
-Patch3:		link.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -275,16 +273,22 @@ p=`pwd`\
 %setup -q -n %{pname}-%{version}
 %patch0 -p1
 %patch1 -p1
-%patch2 -p1
-%patch3 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python2(\s|$),#!%{__python}\1,' \
       cmd/arc_summary/arc_summary2
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python3(\s|$),#!%{__python3}\1,' \
-      cmd/arc_summary/arc_summary3 \
-      cmd/arcstat/arcstat \
-      cmd/dbufstat/dbufstat
+      cmd/arc_summary/arc_summary3
+
+%{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+@PYTHON_SHEBANG@(\s|$),#!%{__python3}\1,' \
+      cmd/arcstat/arcstat.in \
+      cmd/dbufstat/dbufstat.in
+
+%{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+bash(\s|$),#!/bin/bash\1,' \
+      contrib/dracut/02zfsexpandknowledge/module-setup.sh.in \
+      contrib/dracut/90zfs/module-setup.sh.in \
+      scripts/zimport.sh \
+      scripts/zloop.sh
 
 %build
 %{__libtoolize}
@@ -455,15 +459,17 @@ rm -rf $RPM_BUILD_ROOT
 %files libs
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_libdir}/libnvpair.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libnvpair.so.1
+%attr(755,root,root) %ghost %{_libdir}/libnvpair.so.3
 %attr(755,root,root) %{_libdir}/libuutil.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libuutil.so.1
+%attr(755,root,root) %ghost %{_libdir}/libuutil.so.3
 %attr(755,root,root) %{_libdir}/libzfs.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libzfs.so.2
+%attr(755,root,root) %ghost %{_libdir}/libzfs.so.4
 %attr(755,root,root) %{_libdir}/libzfs_core.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libzfs_core.so.1
+%attr(755,root,root) %ghost %{_libdir}/libzfs_core.so.3
+%attr(755,root,root) %{_libdir}/libzfsbootenv.so.*.*.*
+%attr(755,root,root) %ghost %{_libdir}/libzfsbootenv.so.1
 %attr(755,root,root) %{_libdir}/libzpool.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libzpool.so.2
+%attr(755,root,root) %ghost %{_libdir}/libzpool.so.4
 
 %files devel
 %defattr(644,root,root,755)
@@ -471,11 +477,13 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_libdir}/libuutil.so
 %attr(755,root,root) %{_libdir}/libzfs.so
 %attr(755,root,root) %{_libdir}/libzfs_core.so
+%attr(755,root,root) %{_libdir}/libzfsbootenv.so
 %attr(755,root,root) %{_libdir}/libzpool.so
 %{_libdir}/libnvpair.la
 %{_libdir}/libuutil.la
 %{_libdir}/libzfs.la
 %{_libdir}/libzfs_core.la
+%{_libdir}/libzfsbootenv.la
 %{_libdir}/libzpool.la
 %{_includedir}/libspl
 %{_includedir}/libzfs
