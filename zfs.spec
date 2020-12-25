@@ -54,6 +54,7 @@ BuildRequires:	libselinux-devel
 #BuildRequires:	libtirpc-devel
 BuildRequires:	libuuid-devel
 BuildRequires:	openssl-devel
+BuildRequires:	pam-devel
 BuildRequires:	pkgconfig
 BuildRequires:	udev-devel
 BuildRequires:	zlib-devel
