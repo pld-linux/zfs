@@ -1,9 +1,5 @@
 # TODO:
 # - PLDify init script
-# - unpackaged initramfs-tools support:
-#   /usr/share/initramfs-tools/conf-hooks.d/zfs
-#   /usr/share/initramfs-tools/hooks/zfs
-#   /usr/share/initramfs-tools/scripts/zfs
 #
 # Conditional build:
 %bcond_without	kernel		# don't build kernel modules
@@ -28,7 +24,7 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	0.1
+%define	rel	1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
@@ -152,6 +148,15 @@ ZFS support for Dracut.
 %description -n dracut-zfs -l pl.UTF-8
 Obsługa ZFS-a dla Dracuta.
 
+%package -n pam-pam_zfs_key
+Summary:	Unlock zfs datasets for user
+Group:		Libraries
+Requires:	%{pname}-libs = %{version}-%{release}
+Requires:	pam
+
+%description -n pam-pam_zfs_key
+Unlock zfs datasets for user.
+
 %package -n python-pyzfs
 Summary:	Python 2 wrapper for libzfs_core C library
 Summary(pl.UTF-8):	Interfejs Pythona 2 do biblioteki C libzfs_core
@@ -242,6 +247,8 @@ pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.\
 /lib/modules/%{_kernel_ver}/misc/zcommon/zcommon.ko*\
 %dir /lib/modules/%{_kernel_ver}/misc/zfs\
 /lib/modules/%{_kernel_ver}/misc/zfs/zfs.ko*\
+%dir /lib/modules/%{_kernel_ver}/misc/zstd\
+/lib/modules/%{_kernel_ver}/misc/zstd/zzstd.ko*\
 \
 %files -n kernel%{_alt_kernel}-zfs-devel\
 %defattr(644,root,root,755)\
@@ -302,6 +309,8 @@ p=`pwd`\
 %configure \
 	--disable-silent-rules \
 	--enable-systemd \
+	--enable-pam \
+	--with-pammoduledir=/%{_lib}/security \
 	--with-config="user" \
 	--with-linux=%{_kernelsrcdir} \
 	--with-systemdunitdir=%{systemdunitdir} \
@@ -391,9 +400,11 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_sbindir}/zdb
 %attr(755,root,root) %{_sbindir}/zed
 %attr(755,root,root) %{_sbindir}/zfs
+%attr(755,root,root) %{_sbindir}/zfs_ids_to_path
 %attr(755,root,root) %{_sbindir}/zhack
 %attr(755,root,root) %{_sbindir}/zinject
 %attr(755,root,root) %{_sbindir}/zpool
+%attr(755,root,root) %{_sbindir}/zstream
 %attr(755,root,root) %{_sbindir}/zstreamdump
 %attr(755,root,root) %{_sbindir}/ztest
 %dir %{_sysconfdir}/zfs
@@ -455,6 +466,79 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zinject.8*
 %{_mandir}/man8/zpool.8*
 %{_mandir}/man8/zstreamdump.8*
+%{_mandir}/man1/arcstat.1*
+%{_mandir}/man8/zfs-allow.8*
+%{_mandir}/man8/zfs-bookmark.8*
+%{_mandir}/man8/zfs-change-key.8*
+%{_mandir}/man8/zfs-clone.8*
+%{_mandir}/man8/zfs-create.8*
+%{_mandir}/man8/zfs-destroy.8*
+%{_mandir}/man8/zfs-diff.8*
+%{_mandir}/man8/zfs-get.8*
+%{_mandir}/man8/zfs-groupspace.8*
+%{_mandir}/man8/zfs-hold.8*
+%{_mandir}/man8/zfs-inherit.8*
+%{_mandir}/man8/zfs-jail.8*
+%{_mandir}/man8/zfs-list.8*
+%{_mandir}/man8/zfs-load-key.8*
+%{_mandir}/man8/zfs-mount.8*
+%{_mandir}/man8/zfs-project.8*
+%{_mandir}/man8/zfs-projectspace.8*
+%{_mandir}/man8/zfs-promote.8*
+%{_mandir}/man8/zfs-receive.8*
+%{_mandir}/man8/zfs-recv.8*
+%{_mandir}/man8/zfs-redact.8*
+%{_mandir}/man8/zfs-release.8*
+%{_mandir}/man8/zfs-rename.8*
+%{_mandir}/man8/zfs-rollback.8*
+%{_mandir}/man8/zfs-send.8*
+%{_mandir}/man8/zfs-set.8*
+%{_mandir}/man8/zfs-share.8*
+%{_mandir}/man8/zfs-snapshot.8*
+%{_mandir}/man8/zfs-unallow.8*
+%{_mandir}/man8/zfs-unjail.8*
+%{_mandir}/man8/zfs-unload-key.8*
+%{_mandir}/man8/zfs-unmount.8*
+%{_mandir}/man8/zfs-upgrade.8*
+%{_mandir}/man8/zfs-userspace.8*
+%{_mandir}/man8/zfs-wait.8*
+%{_mandir}/man8/zfs_ids_to_path.8*
+%{_mandir}/man8/zfsconcepts.8*
+%{_mandir}/man8/zfsprops.8*
+%{_mandir}/man8/zpool-add.8*
+%{_mandir}/man8/zpool-attach.8*
+%{_mandir}/man8/zpool-checkpoint.8*
+%{_mandir}/man8/zpool-clear.8*
+%{_mandir}/man8/zpool-create.8*
+%{_mandir}/man8/zpool-destroy.8*
+%{_mandir}/man8/zpool-detach.8*
+%{_mandir}/man8/zpool-events.8*
+%{_mandir}/man8/zpool-export.8*
+%{_mandir}/man8/zpool-get.8*
+%{_mandir}/man8/zpool-history.8*
+%{_mandir}/man8/zpool-import.8*
+%{_mandir}/man8/zpool-initialize.8*
+%{_mandir}/man8/zpool-iostat.8*
+%{_mandir}/man8/zpool-labelclear.8*
+%{_mandir}/man8/zpool-list.8*
+%{_mandir}/man8/zpool-offline.8*
+%{_mandir}/man8/zpool-online.8*
+%{_mandir}/man8/zpool-reguid.8*
+%{_mandir}/man8/zpool-remove.8*
+%{_mandir}/man8/zpool-reopen.8*
+%{_mandir}/man8/zpool-replace.8*
+%{_mandir}/man8/zpool-resilver.8*
+%{_mandir}/man8/zpool-scrub.8*
+%{_mandir}/man8/zpool-set.8*
+%{_mandir}/man8/zpool-split.8*
+%{_mandir}/man8/zpool-status.8*
+%{_mandir}/man8/zpool-sync.8*
+%{_mandir}/man8/zpool-trim.8*
+%{_mandir}/man8/zpool-upgrade.8*
+%{_mandir}/man8/zpool-wait.8*
+%{_mandir}/man8/zpoolconcepts.8*
+%{_mandir}/man8/zpoolprops.8*
+%{_mandir}/man8/zstream.8*
 
 %files libs
 %defattr(644,root,root,755)
@@ -489,6 +573,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/libzfs
 %{_pkgconfigdir}/libzfs.pc
 %{_pkgconfigdir}/libzfs_core.pc
+%{_pkgconfigdir}/libzfsbootenv.pc
 
 %files static
 %defattr(644,root,root,755)
@@ -496,6 +581,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libuutil.a
 %{_libdir}/libzfs.a
 %{_libdir}/libzfs_core.a
+%{_libdir}/libzfsbootenv.a
 %{_libdir}/libzpool.a
 
 %files -n dracut-zfs
@@ -513,6 +599,12 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-lib.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-load-key.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-needshutdown.sh
+%{dracutlibdir}/modules.d/90zfs/zfs-rollback-bootfs.service
+%{dracutlibdir}/modules.d/90zfs/zfs-snapshot-bootfs.service
+
+%files -n pam-pam_zfs_key
+%defattr(644,root,root,755)
+%attr(755,root,root) /%{_lib}/security/pam_zfs_key.so
 
 %if %{with python2}
 %files -n python-pyzfs
