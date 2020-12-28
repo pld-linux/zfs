@@ -50,8 +50,7 @@ BuildRequires:	rpmbuild(macros) >= 1.714
 #BuildRequires:	libaio-devel
 BuildRequires:	libblkid-devel
 BuildRequires:	libselinux-devel
-# if xdr gets removed from glibc
-#BuildRequires:	libtirpc-devel
+BuildRequires:	libtirpc-devel
 BuildRequires:	libuuid-devel
 BuildRequires:	openssl-devel
 BuildRequires:	pam-devel
@@ -114,6 +113,7 @@ License:	CDDL
 Group:		Development/Libraries
 Requires:	%{pname}-libs = %{version}-%{release}
 Requires:	libselinux-devel
+Requires:	libtirpc-devel
 Requires:	libuuid-devel
 Requires:	zlib-devel
 
@@ -150,13 +150,17 @@ ZFS support for Dracut.
 Obsługa ZFS-a dla Dracuta.
 
 %package -n pam-pam_zfs_key
-Summary:	Unlock zfs datasets for user
+Summary:	PAM module to unlock ZFS datasets for user
+Summary(pl.UTF-8):	Moduł PAM do odblokowywania zbiorów danych ZFS dla użytkownika
 Group:		Libraries
 Requires:	%{pname}-libs = %{version}-%{release}
 Requires:	pam
 
 %description -n pam-pam_zfs_key
-Unlock zfs datasets for user.
+PAM module to unlock ZFS datasets for user.
+
+%description -n pam-pam_zfs_key -l pl.UTF-8
+Moduł PAM do odblokowywania zbiorów danych ZFS dla użytkownika.
 
 %package -n python-pyzfs
 Summary:	Python 2 wrapper for libzfs_core C library
@@ -309,11 +313,11 @@ p=`pwd`\
 %if %{with userspace}
 %configure \
 	--disable-silent-rules \
-	--enable-systemd \
 	--enable-pam \
-	--with-pammoduledir=/%{_lib}/security \
+	--enable-systemd \
 	--with-config="user" \
 	--with-linux=%{_kernelsrcdir} \
+	--with-pammoduledir=/%{_lib}/security \
 	--with-systemdunitdir=%{systemdunitdir} \
 	--with-systemdpresetdir=/etc/systemd/system-preset \
 	--with-systemdmodulesloaddir=/etc/modules-load.d \
@@ -375,6 +379,10 @@ cd ../..
 # Debian specific stuff
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/initramfs-tools
 
+%{__rm} $RPM_BUILD_ROOT/%{_lib}/security/pam_zfs_key.la
+# Ubuntu PAM config framework file
+%{__rm} $RPM_BUILD_ROOT%{_datadir}/pam-configs/zfs_key
+
 # Package these? These are integration tests of the implementation.
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/zfs/{zfs-tests,test-runner,runfiles}
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/{raidz_test,test-runner}.1*
@@ -423,6 +431,8 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %verify(not md5 mtime size) /etc/default/zfs
 /etc/zfs/zfs-functions
 %config(noreplace) %verify(not md5 mtime size) /etc/modules-load.d/zfs.conf
+# for zpool iostat/status -c smart
+#/ets/sudoers.d/zfs
 /etc/systemd/system-preset/50-zfs.preset
 /lib/systemd/system-generators/zfs-mount-generator
 %{systemdunitdir}/zfs.target
@@ -447,6 +457,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_libexecdir}/zfs/zpool.d/*
 %dir %{_datadir}/zfs
 %attr(755,root,root) %{_datadir}/zfs/*.sh
+%{_mandir}/man1/arcstat.1*
 %{_mandir}/man1/zhack.1*
 %{_mandir}/man1/ztest.1*
 %{_mandir}/man1/zvol_wait.1*
@@ -461,13 +472,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zdb.8*
 %{_mandir}/man8/zed.8*
 %{_mandir}/man8/zfs.8*
-%{_mandir}/man8/zfs-mount-generator.8*
-%{_mandir}/man8/zfs-program.8*
-%{_mandir}/man8/zgenhostid.8*
-%{_mandir}/man8/zinject.8*
-%{_mandir}/man8/zpool.8*
-%{_mandir}/man8/zstreamdump.8*
-%{_mandir}/man1/arcstat.1*
 %{_mandir}/man8/zfs-allow.8*
 %{_mandir}/man8/zfs-bookmark.8*
 %{_mandir}/man8/zfs-change-key.8*
@@ -483,6 +487,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zfs-list.8*
 %{_mandir}/man8/zfs-load-key.8*
 %{_mandir}/man8/zfs-mount.8*
+%{_mandir}/man8/zfs-mount-generator.8*
+%{_mandir}/man8/zfs-program.8*
 %{_mandir}/man8/zfs-project.8*
 %{_mandir}/man8/zfs-projectspace.8*
 %{_mandir}/man8/zfs-promote.8*
@@ -506,6 +512,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zfs_ids_to_path.8*
 %{_mandir}/man8/zfsconcepts.8*
 %{_mandir}/man8/zfsprops.8*
+%{_mandir}/man8/zgenhostid.8*
+%{_mandir}/man8/zinject.8*
+%{_mandir}/man8/zpool.8*
 %{_mandir}/man8/zpool-add.8*
 %{_mandir}/man8/zpool-attach.8*
 %{_mandir}/man8/zpool-checkpoint.8*
@@ -540,6 +549,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zpoolconcepts.8*
 %{_mandir}/man8/zpoolprops.8*
 %{_mandir}/man8/zstream.8*
+%{_mandir}/man8/zstreamdump.8*
 
 %files libs
 %defattr(644,root,root,755)
