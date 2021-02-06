@@ -24,7 +24,7 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	1
+%define	rel	2
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
@@ -403,13 +403,13 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/arc_summary
 %attr(755,root,root) %{_bindir}/arcstat
 %attr(755,root,root) %{_bindir}/dbufstat
-%attr(755,root,root) %{_bindir}/zgenhostid
 %attr(755,root,root) %{_bindir}/zvol_wait
 %attr(755,root,root) %{_sbindir}/fsck.zfs
 %attr(755,root,root) %{_sbindir}/zdb
 %attr(755,root,root) %{_sbindir}/zed
 %attr(755,root,root) %{_sbindir}/zfs
 %attr(755,root,root) %{_sbindir}/zfs_ids_to_path
+%attr(755,root,root) %{_sbindir}/zgenhostid
 %attr(755,root,root) %{_sbindir}/zhack
 %attr(755,root,root) %{_sbindir}/zinject
 %attr(755,root,root) %{_sbindir}/zpool
