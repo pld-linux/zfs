@@ -3,7 +3,7 @@ index 55cae89fa..8ce1af3b8 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -9,14 +9,14 @@ if CONFIG_USER
- SUBDIRS += udev etc man scripts lib tests cmd contrib
+ endif
  endif
  if CONFIG_KERNEL
 -SUBDIRS += module
