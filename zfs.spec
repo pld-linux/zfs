@@ -29,14 +29,15 @@ exit 1
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	2.0.5
+Version:	2.1.0
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	66d71cfbc1f23d90d6d37976c6dd3938
+# Source0-md5:	4520749a47d66a3e0b83d7b82a8c7e29
 Patch0:		initdir.patch
 Patch1:		am.patch
+Patch2:		kernel-5.14.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -285,6 +286,7 @@ p=`pwd`\
 %setup -q -n %{pname}-%{version}
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python2(\s|$),#!%{__python}\1,' \
       cmd/arc_summary/arc_summary2
@@ -457,15 +459,20 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_libexecdir}/zfs/zpool.d/*
 %dir %{_datadir}/zfs
 %attr(755,root,root) %{_datadir}/zfs/*.sh
+%attr(755,root,root) %{_libexecdir}/zfs/zpool_influxdb
+%{_datadir}/zfs/compatibility.d
 %{_mandir}/man1/arcstat.1*
 %{_mandir}/man1/zhack.1*
 %{_mandir}/man1/ztest.1*
 %{_mandir}/man1/zvol_wait.1*
-%{_mandir}/man5/spl-module-parameters.5*
+%{_mandir}/man4/spl.4*
+%{_mandir}/man4/zfs.4*
 %{_mandir}/man5/vdev_id.conf.5*
-%{_mandir}/man5/zfs-events.5*
-%{_mandir}/man5/zfs-module-parameters.5*
-%{_mandir}/man5/zpool-features.5*
+%{_mandir}/man7/zfsconcepts.7*
+%{_mandir}/man7/zfsprops.7*
+%{_mandir}/man7/zpool-features.7*
+%{_mandir}/man7/zpoolconcepts.7*
+%{_mandir}/man7/zpoolprops.7*
 %{_mandir}/man8/fsck.zfs.8*
 %{_mandir}/man8/mount.zfs.8*
 %{_mandir}/man8/vdev_id.8*
@@ -510,8 +517,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zfs-userspace.8*
 %{_mandir}/man8/zfs-wait.8*
 %{_mandir}/man8/zfs_ids_to_path.8*
-%{_mandir}/man8/zfsconcepts.8*
-%{_mandir}/man8/zfsprops.8*
 %{_mandir}/man8/zgenhostid.8*
 %{_mandir}/man8/zinject.8*
 %{_mandir}/man8/zpool.8*
@@ -546,8 +551,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zpool-trim.8*
 %{_mandir}/man8/zpool-upgrade.8*
 %{_mandir}/man8/zpool-wait.8*
-%{_mandir}/man8/zpoolconcepts.8*
-%{_mandir}/man8/zpoolprops.8*
+%{_mandir}/man8/zpool_influxdb.8*
 %{_mandir}/man8/zstream.8*
 %{_mandir}/man8/zstreamdump.8*
 
@@ -564,7 +568,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_libdir}/libzfsbootenv.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libzfsbootenv.so.1
 %attr(755,root,root) %{_libdir}/libzpool.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libzpool.so.4
+%attr(755,root,root) %ghost %{_libdir}/libzpool.so.5
 
 %files devel
 %defattr(644,root,root,755)
@@ -602,6 +606,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{dracutlibdir}/modules.d/02zfsexpandknowledge/module-setup.sh
 %dir %{dracutlibdir}/modules.d/90zfs
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/export-zfs.sh
+%attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/import-opts-generator.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/module-setup.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/mount-zfs.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/parse-zfs.sh
