@@ -24,7 +24,7 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	1
+%define	rel	2
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
@@ -369,7 +369,6 @@ cd ../..
 %endif
 
 %if %{with python3}
-%{__rm} -r $RPM_BUILD_ROOT/usr/local/%{_lib}/python3*
 cd contrib/pyzfs
 %py3_install
 cd ../..
