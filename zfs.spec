@@ -24,17 +24,17 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	2
+%define	rel	1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	2.1.2
+Version:	2.1.4
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	f7061f28aede1a2adf2cab10f2a43a14
+# Source0-md5:	5ed389ab166c17e646f61856dba8c6c2
 Patch0:		initdir.patch
 Patch1:		am.patch
 URL:		https://zfsonlinux.org/
@@ -427,6 +427,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(754,root,root) /etc/rc.d/init.d/zfs-mount
 %attr(754,root,root) /etc/rc.d/init.d/zfs-share
 %attr(754,root,root) /etc/rc.d/init.d/zfs-zed
+%attr(754,root,root) /etc/rc.d/init.d/zfs-load-key
 %config(noreplace) %verify(not md5 mtime size) /etc/default/zfs
 /etc/zfs/zfs-functions
 %config(noreplace) %verify(not md5 mtime size) /etc/modules-load.d/zfs.conf
@@ -440,6 +441,9 @@ rm -rf $RPM_BUILD_ROOT
 %{systemdunitdir}/zfs-import-cache.service
 %{systemdunitdir}/zfs-import-scan.service
 %{systemdunitdir}/zfs-mount.service
+%{systemdunitdir}/zfs-scrub@.service
+%{systemdunitdir}/zfs-scrub-monthly@.timer
+%{systemdunitdir}/zfs-scrub-weekly@.timer
 %{systemdunitdir}/zfs-share.service
 %{systemdunitdir}/zfs-volume-wait.service
 %{systemdunitdir}/zfs-volumes.target
