@@ -24,20 +24,19 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	2
+%define	rel	1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	2.1.4
+Version:	2.1.5
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	5ed389ab166c17e646f61856dba8c6c2
+# Source0-md5:	a1efd694cfa22522c51400b2e8731f25
 Patch0:		initdir.patch
 Patch1:		am.patch
-Patch2:		zfs-2.1.5-staging.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -286,7 +285,6 @@ p=`pwd`\
 %setup -q -n %{pname}-%{version}
 %patch0 -p1
 %patch1 -p1
-%patch2 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python2(\s|$),#!%{__python}\1,' \
       cmd/arc_summary/arc_summary2
