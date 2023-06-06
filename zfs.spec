@@ -29,16 +29,16 @@ exit 1
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	2.1.9
+Version:	2.1.11
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	d464a712eb43411f2360214badd3b35a
+# Source0-md5:	2a7b9d2a487a02d373404c48719488ed
 Patch0:		initdir.patch
 Patch1:		am.patch
 Patch2:		no-Werror.patch
-Patch3:		blkdev.patch
+Patch3:		staging.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -289,9 +289,6 @@ p=`pwd`\
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
-
-%{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python2(\s|$),#!%{__python}\1,' \
-      cmd/arc_summary/arc_summary2
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python3(\s|$),#!%{__python3}\1,' \
       cmd/arc_summary/arc_summary3
@@ -621,6 +618,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-lib.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-load-key.sh
 %attr(755,root,root) %{dracutlibdir}/modules.d/90zfs/zfs-needshutdown.sh
+%{dracutlibdir}/modules.d/90zfs/zfs-nonroot-necessities.service
 %{dracutlibdir}/modules.d/90zfs/zfs-rollback-bootfs.service
 %{dracutlibdir}/modules.d/90zfs/zfs-snapshot-bootfs.service
 %{_mandir}/man7/dracut.zfs.7*
