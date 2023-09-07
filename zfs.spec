@@ -24,21 +24,20 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	1
+%define	pre	rc3
+%define	rel	0.%{pre}.1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	2.1.11
+Version:	2.2.0
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
-Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	2a7b9d2a487a02d373404c48719488ed
+Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}-%{pre}/%{pname}-%{version}-%{pre}.tar.gz
+# Source0-md5:	75fd8dc40d9601db40029b357c824f3f
 Patch0:		initdir.patch
-Patch1:		am.patch
-Patch2:		no-Werror.patch
-Patch3:		staging.patch
+Patch3:		kernel-6.5.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -238,24 +237,8 @@ pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.\
 \
 %files -n kernel%{_alt_kernel}-zfs\
 %defattr(644,root,root,755)\
-%dir /lib/modules/%{_kernel_ver}/misc/lua\
-/lib/modules/%{_kernel_ver}/misc/lua/zlua.ko*\
-%dir /lib/modules/%{_kernel_ver}/misc/avl\
-/lib/modules/%{_kernel_ver}/misc/avl/zavl.ko*\
-%dir /lib/modules/%{_kernel_ver}/misc/icp\
-/lib/modules/%{_kernel_ver}/misc/icp/icp.ko*\
-%dir /lib/modules/%{_kernel_ver}/misc/nvpair\
-/lib/modules/%{_kernel_ver}/misc/nvpair/znvpair.ko*\
-%dir /lib/modules/%{_kernel_ver}/misc/spl\
-/lib/modules/%{_kernel_ver}/misc/spl/spl.ko*\
-%dir /lib/modules/%{_kernel_ver}/misc/unicode\
-/lib/modules/%{_kernel_ver}/misc/unicode/zunicode.ko*\
-%dir /lib/modules/%{_kernel_ver}/misc/zcommon\
-/lib/modules/%{_kernel_ver}/misc/zcommon/zcommon.ko*\
-%dir /lib/modules/%{_kernel_ver}/misc/zfs\
-/lib/modules/%{_kernel_ver}/misc/zfs/zfs.ko*\
-%dir /lib/modules/%{_kernel_ver}/misc/zstd\
-/lib/modules/%{_kernel_ver}/misc/zstd/zzstd.ko*\
+/lib/modules/%{_kernel_ver}/misc/spl.ko*\
+/lib/modules/%{_kernel_ver}/misc/zfs.ko*\
 \
 %files -n kernel%{_alt_kernel}-zfs-devel\
 %defattr(644,root,root,755)\
@@ -284,18 +267,17 @@ p=`pwd`\
 %{?with_kernel:%{expand:%create_kernel_packages}}
 
 %prep
-%setup -q -n %{pname}-%{version}
+%setup -q -n %{pname}-%{version}-%{pre}
 %patch0 -p1
-%patch1 -p1
-%patch2 -p1
 %patch3 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python3(\s|$),#!%{__python3}\1,' \
-      cmd/arc_summary/arc_summary3
+      cmd/arc_summary
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+@PYTHON_SHEBANG@(\s|$),#!%{__python3}\1,' \
-      cmd/arcstat/arcstat.in \
-      cmd/dbufstat/dbufstat.in
+      cmd/arcstat.in \
+      cmd/dbufstat.in \
+      cmd/zilstat.in
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+bash(\s|$),#!/bin/bash\1,' \
       contrib/dracut/02zfsexpandknowledge/module-setup.sh.in \
@@ -347,8 +329,6 @@ rm -rf $RPM_BUILD_ROOT
 %if %{with kernel}
 install -d $RPM_BUILD_ROOT
 cp -a installed/* $RPM_BUILD_ROOT
-# Drop unneeded spl compat links
-%{__rm} -r $RPM_BUILD_ROOT/usr/src/spl-%{version}
 %endif
 
 %if %{with userspace}
@@ -403,6 +383,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/arc_summary
 %attr(755,root,root) %{_bindir}/arcstat
 %attr(755,root,root) %{_bindir}/dbufstat
+%attr(755,root,root) %{_bindir}/zilstat
 %attr(755,root,root) %{_bindir}/zvol_wait
 %attr(755,root,root) %{_sbindir}/fsck.zfs
 %attr(755,root,root) %{_sbindir}/zdb
@@ -447,6 +428,9 @@ rm -rf $RPM_BUILD_ROOT
 %{systemdunitdir}/zfs-scrub-monthly@.timer
 %{systemdunitdir}/zfs-scrub-weekly@.timer
 %{systemdunitdir}/zfs-share.service
+%{systemdunitdir}/zfs-trim-monthly@.timer
+%{systemdunitdir}/zfs-trim-weekly@.timer
+%{systemdunitdir}/zfs-trim@.service
 %{systemdunitdir}/zfs-volume-wait.service
 %{systemdunitdir}/zfs-volumes.target
 %{systemdunitdir}/zfs-zed.service
@@ -471,6 +455,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man4/spl.4*
 %{_mandir}/man4/zfs.4*
 %{_mandir}/man5/vdev_id.conf.5*
+%{_mandir}/man7/vdevprops.7*
 %{_mandir}/man7/zfsconcepts.7*
 %{_mandir}/man7/zfsprops.7*
 %{_mandir}/man7/zpool-features.7*
@@ -515,10 +500,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zfs-unallow.8*
 %{_mandir}/man8/zfs-unjail.8*
 %{_mandir}/man8/zfs-unload-key.8*
+%{_mandir}/man8/zfs-unzone.8*
 %{_mandir}/man8/zfs-unmount.8*
 %{_mandir}/man8/zfs-upgrade.8*
 %{_mandir}/man8/zfs-userspace.8*
 %{_mandir}/man8/zfs-wait.8*
+%{_mandir}/man8/zfs-zone.8*
 %{_mandir}/man8/zfs_ids_to_path.8*
 %{_mandir}/man8/zgenhostid.8*
 %{_mandir}/man8/zinject.8*
@@ -604,7 +591,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files -n dracut-zfs
 %defattr(644,root,root,755)
-%doc contrib/dracut/README.dracut.markdown
+%doc contrib/dracut/README.md
 %dir %{dracutlibdir}/modules.d/02zfsexpandknowledge
 %attr(755,root,root) %{dracutlibdir}/modules.d/02zfsexpandknowledge/module-setup.sh
 %dir %{dracutlibdir}/modules.d/90zfs
@@ -649,6 +636,6 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644,root,root,755)
 %dir /usr/src/zfs-%{version}
 /usr/src/zfs-%{version}/include
-/usr/src/zfs-%{version}/zfs.release
-/usr/src/zfs-%{version}/zfs_config.h
+/usr/src/zfs-%{version}/zfs.release.in
+/usr/src/zfs-%{version}/zfs_config.h.in
 %endif
