@@ -24,8 +24,8 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	pre	rc3
-%define	rel	0.%{pre}.1
+#define	pre	rc3
+%define	rel	0.1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
@@ -34,10 +34,9 @@ Version:	2.2.0
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
-Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}-%{pre}/%{pname}-%{version}-%{pre}.tar.gz
-# Source0-md5:	75fd8dc40d9601db40029b357c824f3f
+Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
+# Source0-md5:	d7e2ec4c52d6a48653ce4a5b96c24a01
 Patch0:		initdir.patch
-Patch3:		kernel-6.5.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -267,9 +266,8 @@ p=`pwd`\
 %{?with_kernel:%{expand:%create_kernel_packages}}
 
 %prep
-%setup -q -n %{pname}-%{version}-%{pre}
+%setup -q -n %{pname}-%{version}
 %patch0 -p1
-%patch3 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python3(\s|$),#!%{__python3}\1,' \
       cmd/arc_summary
