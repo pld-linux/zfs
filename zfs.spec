@@ -24,8 +24,7 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-#define	pre	rc3
-%define	rel	0.1
+%define	rel	1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
@@ -37,6 +36,7 @@ Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
 # Source0-md5:	d7e2ec4c52d6a48653ce4a5b96c24a01
 Patch0:		initdir.patch
+Patch1:		kernel-6.6.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -268,6 +268,7 @@ p=`pwd`\
 %prep
 %setup -q -n %{pname}-%{version}
 %patch0 -p1
+%patch1 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python3(\s|$),#!%{__python3}\1,' \
       cmd/arc_summary
@@ -476,7 +477,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zfs-groupspace.8*
 %{_mandir}/man8/zfs-hold.8*
 %{_mandir}/man8/zfs-inherit.8*
-%{_mandir}/man8/zfs-jail.8*
 %{_mandir}/man8/zfs-list.8*
 %{_mandir}/man8/zfs-load-key.8*
 %{_mandir}/man8/zfs-mount.8*
@@ -496,7 +496,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zfs-share.8*
 %{_mandir}/man8/zfs-snapshot.8*
 %{_mandir}/man8/zfs-unallow.8*
-%{_mandir}/man8/zfs-unjail.8*
 %{_mandir}/man8/zfs-unload-key.8*
 %{_mandir}/man8/zfs-unzone.8*
 %{_mandir}/man8/zfs-unmount.8*
