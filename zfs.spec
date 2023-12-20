@@ -61,11 +61,13 @@ BuildRequires:	pkgconfig
 BuildRequires:	udev-devel
 BuildRequires:	zlib-devel
 %if %{with python2}
+BuildRequires:	python >= 1:2.6
 BuildRequires:	python-cffi
 BuildRequires:	python-modules >= 1:2.6
 BuildRequires:	python-setuptools
 %endif
 %if %{with python3}
+BuildRequires:	python3 >= 1:3.4
 BuildRequires:	python3-cffi
 BuildRequires:	python3-modules >= 1:3.4
 BuildRequires:	python3-setuptools
