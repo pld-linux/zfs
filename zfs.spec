@@ -41,13 +41,16 @@ URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
 BuildRequires:	libtool
-BuildRequires:	rpmbuild(macros) >= 1.714
+BuildRequires:	rpmbuild(macros) >= 2.025
 %if %{with kernel}
 %{expand:%buildrequires_kernel kernel%%{_alt_kernel}-module-build >= 3:2.6.20.2}
 %endif
 %if %{with userspace}
 # only for mmap_libaio test command
 #BuildRequires:	libaio-devel
+%ifnarch %arch_with_atomics64
+BuildRequires:	libatomic-devel
+%endif
 BuildRequires:	libblkid-devel
 BuildRequires:	libselinux-devel
 BuildRequires:	libtirpc-devel
