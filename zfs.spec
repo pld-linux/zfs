@@ -41,7 +41,7 @@ URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
 BuildRequires:	libtool
-BuildRequires:	rpmbuild(macros) >= 2.025
+BuildRequires:	rpmbuild(macros) >= 2.030
 %if %{with kernel}
 %{expand:%buildrequires_kernel kernel%%{_alt_kernel}-module-build >= 3:2.6.20.2}
 %endif
@@ -256,7 +256,10 @@ pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.\
 %{nil}
 
 %define build_kernel_pkg()\
+KERNEL_MAKE="ARCH=%_kernel_arch" \\\
 %configure \\\
+	KERNEL_CC="%{__cc}" \\\
+	ARCH_UM="ARCH=%{_kernel_arch}" \\\
 	--disable-silent-rules \\\
 	--with-config="kernel" \\\
 	--with-linux=%{_kernelsrcdir}\\\
