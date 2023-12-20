@@ -30,14 +30,13 @@ exit 1
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	2.2.0
+Version:	2.2.2
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	d7e2ec4c52d6a48653ce4a5b96c24a01
+# Source0-md5:	bbfea5e8d22e7484150038668d0d410a
 Patch0:		initdir.patch
-Patch1:		kernel-6.6.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -274,21 +273,20 @@ p=`pwd`\
 %prep
 %setup -q -n %{pname}-%{version}
 %patch0 -p1
-%patch1 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python3(\s|$),#!%{__python3}\1,' \
-      cmd/arc_summary
+	cmd/arc_summary
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+@PYTHON_SHEBANG@(\s|$),#!%{__python3}\1,' \
-      cmd/arcstat.in \
-      cmd/dbufstat.in \
-      cmd/zilstat.in
+	cmd/arcstat.in \
+	cmd/dbufstat.in \
+	cmd/zilstat.in
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+bash(\s|$),#!/bin/bash\1,' \
-      contrib/dracut/02zfsexpandknowledge/module-setup.sh.in \
-      contrib/dracut/90zfs/module-setup.sh.in \
-      scripts/zimport.sh \
-      scripts/zloop.sh
+	contrib/dracut/02zfsexpandknowledge/module-setup.sh.in \
+	contrib/dracut/90zfs/module-setup.sh.in \
+	scripts/zimport.sh \
+	scripts/zloop.sh
 
 %build
 %{__libtoolize}
@@ -452,6 +450,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_libexecdir}/zfs/zpool.d/*
 %dir %{_datadir}/zfs
 %attr(755,root,root) %{_datadir}/zfs/*.sh
+%attr(755,root,root) %{_libexecdir}/zfs/zfs_prepare_disk
 %attr(755,root,root) %{_libexecdir}/zfs/zpool_influxdb
 %{_datadir}/zfs/compatibility.d
 %{_mandir}/man1/arcstat.1*
@@ -511,6 +510,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zfs-wait.8*
 %{_mandir}/man8/zfs-zone.8*
 %{_mandir}/man8/zfs_ids_to_path.8*
+%{_mandir}/man8/zfs_prepare_disk.8*
 %{_mandir}/man8/zgenhostid.8*
 %{_mandir}/man8/zinject.8*
 %{_mandir}/man8/zpool.8*
