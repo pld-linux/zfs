@@ -6,6 +6,7 @@
 %bcond_without	userspace	# don't build userspace programs
 %bcond_without	python2		# CPython 2.x module
 %bcond_without	python3		# CPython 3.x module
+%bcond_without	static_libs	# static libraries
 %bcond_with	verbose		# verbose build (V=1)
 #
 # The goal here is to have main, userspace, package built once with
@@ -300,6 +301,7 @@ p=`pwd`\
 %if %{with userspace}
 %configure \
 	--disable-silent-rules \
+	%{__enable_disable static_libs static} \
 	--enable-pam \
 	--enable-systemd \
 	--with-config="user" \
@@ -582,6 +584,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_pkgconfigdir}/libzfs_core.pc
 %{_pkgconfigdir}/libzfsbootenv.pc
 
+%if %{with static_libs}
 %files static
 %defattr(644,root,root,755)
 %{_libdir}/libnvpair.a
@@ -590,6 +593,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libzfs_core.a
 %{_libdir}/libzfsbootenv.a
 %{_libdir}/libzpool.a
+%endif
 
 %files -n dracut-zfs
 %defattr(644,root,root,755)
