@@ -407,6 +407,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_sysconfdir}/zfs
 # package *.example as %doc? (they cannot act as default configuration)
 %{_sysconfdir}/zfs/vdev_id.conf.*.example
+%{_sysconfdir}/zfs/zfs-functions
 %dir %{_sysconfdir}/zfs/zed.d
 %attr(755,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/zfs/zed.d/*.sh
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/zfs/zed.d/zed.rc
@@ -418,7 +419,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(754,root,root) /etc/rc.d/init.d/zfs-zed
 %attr(754,root,root) /etc/rc.d/init.d/zfs-load-key
 %config(noreplace) %verify(not md5 mtime size) /etc/default/zfs
-/etc/zfs/zfs-functions
 %config(noreplace) %verify(not md5 mtime size) /etc/modules-load.d/zfs.conf
 # for zpool iostat/status -c smart
 #/ets/sudoers.d/zfs
@@ -451,11 +451,12 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_libexecdir}/zfs/zed.d/*.sh
 %dir %{_libexecdir}/zfs/zpool.d
 %attr(755,root,root) %{_libexecdir}/zfs/zpool.d/*
-%dir %{_datadir}/zfs
-%attr(755,root,root) %{_datadir}/zfs/*.sh
 %attr(755,root,root) %{_libexecdir}/zfs/zfs_prepare_disk
 %attr(755,root,root) %{_libexecdir}/zfs/zpool_influxdb
+%dir %{_datadir}/zfs
+%attr(755,root,root) %{_datadir}/zfs/*.sh
 %{_datadir}/zfs/compatibility.d
+%{bash_compdir}/zfs
 %{_mandir}/man1/arcstat.1*
 %{_mandir}/man1/zhack.1*
 %{_mandir}/man1/ztest.1*
