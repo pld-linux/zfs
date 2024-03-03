@@ -30,12 +30,12 @@ exit 1
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	2.2.2
+Version:	2.2.3
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	bbfea5e8d22e7484150038668d0d410a
+# Source0-md5:	e0f2b72ccd47a5b401cbc9f38b1d9073
 Patch0:		initdir.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
