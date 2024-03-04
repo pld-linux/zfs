@@ -4,7 +4,6 @@
 # Conditional build:
 %bcond_without	kernel		# don't build kernel modules
 %bcond_without	userspace	# don't build userspace programs
-%bcond_without	python2		# CPython 2.x module
 %bcond_without	python3		# CPython 3.x module
 %bcond_without	static_libs	# static libraries
 %bcond_with	verbose		# verbose build (V=1)
@@ -25,7 +24,7 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	1
+%define	rel	2
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
@@ -60,19 +59,13 @@ BuildRequires:	pam-devel
 BuildRequires:	pkgconfig
 BuildRequires:	udev-devel
 BuildRequires:	zlib-devel
-%if %{with python2}
-BuildRequires:	python >= 1:2.6
-BuildRequires:	python-cffi
-BuildRequires:	python-modules >= 1:2.6
-BuildRequires:	python-setuptools
-%endif
 %if %{with python3}
-BuildRequires:	python3 >= 1:3.4
+BuildRequires:	python3 >= 1:3.6
 BuildRequires:	python3-cffi
-BuildRequires:	python3-modules >= 1:3.4
+BuildRequires:	python3-modules >= 1:3.6
 BuildRequires:	python3-setuptools
 %endif
-%if %{with python2} || %{with python3}
+%if %{with python3}
 BuildRequires:	rpm-pythonprov
 %endif
 %endif
@@ -167,25 +160,13 @@ PAM module to unlock ZFS datasets for user.
 %description -n pam-pam_zfs_key -l pl.UTF-8
 Moduł PAM do odblokowywania zbiorów danych ZFS dla użytkownika.
 
-%package -n python-pyzfs
-Summary:	Python 2 wrapper for libzfs_core C library
-Summary(pl.UTF-8):	Interfejs Pythona 2 do biblioteki C libzfs_core
-License:	Apache v2.0
-Group:		Libraries/Python
-Requires:	%{pname}-libs = %{version}-%{release}
-
-%description -n python-pyzfs
-Python 2 wrapper for libzfs_core C library.
-
-%description -n python-pyzfs -l pl.UTF-8
-Interfejs Pythona 2 do biblioteki C libzfs_core.
-
 %package -n python3-pyzfs
 Summary:	Python 3 wrapper for libzfs_core C library
 Summary(pl.UTF-8):	Interfejs Pythona 3 do biblioteki C libzfs_core
 License:	Apache v2.0
 Group:		Libraries/Python
 Requires:	%{pname}-libs = %{version}-%{release}
+Obsoletes:	python-pyzfs < 2.2.3-2
 
 %description -n python3-pyzfs
 Python 3 wrapper for libzfs_core C library.
@@ -317,12 +298,6 @@ p=`pwd`\
 %{__make} \
 	%{?with_verbose:V=1}
 
-%if %{with python2}
-cd contrib/pyzfs
-%py_build
-cd ../..
-%endif
-
 %if %{with python3}
 cd contrib/pyzfs
 %py3_build
@@ -342,19 +317,6 @@ cp -a installed/* $RPM_BUILD_ROOT
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT \
 	DEFAULT_INIT_DIR=/etc/rc.d/init.d
-
-%if %{with python2}
-%{__rm} -rf $RPM_BUILD_ROOT%{py_sitescriptdir}
-cd contrib/pyzfs
-%py_install
-
-%py_ocomp $RPM_BUILD_ROOT%{py_sitescriptdir}
-%py_comp $RPM_BUILD_ROOT%{py_sitescriptdir}
-
-%py_postclean
-cd ../..
-%{__rm} -r $RPM_BUILD_ROOT%{py_sitescriptdir}/libzfs_core/test
-%endif
 
 %if %{with python3}
 cd contrib/pyzfs
@@ -623,14 +585,6 @@ rm -rf $RPM_BUILD_ROOT
 %files -n pam-pam_zfs_key
 %defattr(644,root,root,755)
 %attr(755,root,root) /%{_lib}/security/pam_zfs_key.so
-
-%if %{with python2}
-%files -n python-pyzfs
-%defattr(644,root,root,755)
-%doc contrib/pyzfs/README
-%{py_sitescriptdir}/libzfs_core
-%{py_sitescriptdir}/pyzfs-*-py*.egg-info
-%endif
 
 %if %{with python3}
 %files -n python3-pyzfs
