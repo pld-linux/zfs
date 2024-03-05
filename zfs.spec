@@ -62,7 +62,9 @@ BuildRequires:	zlib-devel
 %if %{with python3}
 BuildRequires:	python3 >= 1:3.6
 BuildRequires:	python3-cffi
+BuildRequires:	python3-devel >= 1:3.6
 BuildRequires:	python3-modules >= 1:3.6
+BuildRequires:	python3-packaging
 BuildRequires:	python3-setuptools
 %endif
 %if %{with python3}
