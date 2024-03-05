@@ -36,6 +36,7 @@ Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
 # Source0-md5:	e0f2b72ccd47a5b401cbc9f38b1d9073
 Patch0:		initdir.patch
+Patch1:		pld.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -259,6 +260,7 @@ p=`pwd`\
 %prep
 %setup -q -n %{pname}-%{version}
 %patch0 -p1
+%patch1 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python3(\s|$),#!%{__python3}\1,' \
 	cmd/arc_summary
@@ -295,7 +297,8 @@ p=`pwd`\
 	--with-systemdpresetdir=/etc/systemd/system-preset \
 	--with-systemdmodulesloaddir=/etc/modules-load.d \
 	--with-systemdgeneratordir=/lib/systemd/system-generators \
-	--with-udevdir=/lib/udev
+	--with-udevdir=/lib/udev \
+	--with-vendor=pld
 
 %{__make} \
 	%{?with_verbose:V=1}

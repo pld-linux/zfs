@@ -1,0 +1,10 @@
+--- zfs-2.2.3/config/zfs-build.m4.orig	2024-02-22 18:27:01.262129327 +0100
++++ zfs-2.2.3/config/zfs-build.m4	2024-03-05 09:42:48.042560357 +0100
+@@ -627,6 +627,7 @@
+ 		debian)     bashcompletiondir=/usr/share/bash-completion/completions   ;;
+ 		freebsd)    bashcompletiondir=$sysconfdir/bash_completion.d;;
+ 		gentoo)     bashcompletiondir=/usr/share/bash-completion/completions   ;;
++		pld)        bashcompletiondir=/usr/share/bash-completion/completions   ;;
+ 		*)          bashcompletiondir=/etc/bash_completion.d   ;;
+ 	esac
+ 	AC_MSG_RESULT([$bashcompletiondir])
