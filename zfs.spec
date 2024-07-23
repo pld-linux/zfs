@@ -37,6 +37,7 @@ Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname
 # Source0-md5:	8d563179aadb2a008f501aee34d3daf9
 Patch0:		initdir.patch
 Patch1:		pld.patch
+Patch2:		kernel-6.10.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -261,6 +262,7 @@ p=`pwd`\
 %setup -q -n %{pname}-%{version}
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python3(\s|$),#!%{__python3}\1,' \
 	cmd/arc_summary
