@@ -29,12 +29,12 @@ exit 1
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	2.2.6
+Version:	2.2.7
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	3a6541d5b516cb449be50b7df60ffd4f
+# Source0-md5:	25d3e7afe00e04abe2c795cf644070af
 Patch0:		initdir.patch
 Patch1:		pld.patch
 URL:		https://zfsonlinux.org/
@@ -338,7 +338,7 @@ cd ../..
 %{__rm} $RPM_BUILD_ROOT%{_datadir}/pam-configs/zfs_key
 
 # Package these? These are integration tests of the implementation.
-%{__rm} -r $RPM_BUILD_ROOT%{_datadir}/zfs/{zfs-tests,test-runner,runfiles}
+%{__rm} -r $RPM_BUILD_ROOT%{_datadir}/zfs/{zfs-tests,zfs-tests.sh,test-runner,runfiles}
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/{raidz_test,test-runner}.1*
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/raidz_test
 %endif
@@ -552,6 +552,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libzpool.la
 %{_includedir}/libspl
 %{_includedir}/libzfs
+%{_includedir}/libzpool
 %{_pkgconfigdir}/libzfs.pc
 %{_pkgconfigdir}/libzfs_core.pc
 %{_pkgconfigdir}/libzfsbootenv.pc
