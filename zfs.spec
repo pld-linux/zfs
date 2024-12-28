@@ -55,6 +55,7 @@ BuildRequires:	libatomic-devel
 BuildRequires:	libblkid-devel
 BuildRequires:	libselinux-devel
 BuildRequires:	libtirpc-devel
+BuildRequires:	libunwind-devel >= 1.8.0
 BuildRequires:	libuuid-devel
 BuildRequires:	openssl-devel
 BuildRequires:	pam-devel
@@ -74,6 +75,7 @@ BuildRequires:	rpm-pythonprov
 %endif
 %endif
 Requires:	%{pname}-libs = %{version}-%{release}
+Requires:	libunwind >= 1.8.0
 Obsoletes:	spl < 0.7.9-2
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
@@ -101,6 +103,7 @@ Summary(pl.UTF-8):	Biblioteki ZFS-a dla Linuksa
 License:	CDDL
 Group:		Libraries
 Requires(post,postun):	/sbin/ldconfig
+Requires:	libunwind >= 1.8.0
 
 %description libs
 ZFS on Linux libraries.
