@@ -244,7 +244,7 @@ pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.\
 %{nil}
 
 %define build_kernel_pkg()\
-KERNEL_MAKE="ARCH=%_kernel_arch" \\\
+export KERNEL_MAKE="ARCH=%_kernel_arch" \\\
 %configure \\\
 	KERNEL_CC="%{__cc}" \\\
 	ARCH_UM="ARCH=%{_kernel_arch}" \\\
