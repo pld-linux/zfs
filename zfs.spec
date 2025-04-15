@@ -24,20 +24,19 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	4
+%define	rel	1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	2.2.7
+Version:	2.3.1
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	25d3e7afe00e04abe2c795cf644070af
+# Source0-md5:	1d8fef7fce8556cd1d4eb0a6dafcbaa8
 Patch0:		initdir.patch
 Patch1:		pld.patch
-Patch2:		dequeue_signal.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -265,7 +264,6 @@ p=`pwd`\
 %setup -q -n %{pname}-%{version}
 %patch -P 0 -p1
 %patch -P 1 -p1
-%patch -P 2 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python3(\s|$),#!%{__python3}\1,' \
 	cmd/arc_summary
@@ -327,6 +325,11 @@ cp -a installed/* $RPM_BUILD_ROOT
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT \
 	DEFAULT_INIT_DIR=/etc/rc.d/init.d
+
+# these headers are used as <sys/abd_os.h> and <sys/abd_impl_os.h> from /usr/include/libzfs/sys/abd{,_impl}.h resp.
+# they don't refer to any functions in libzpool
+%{__mv} $RPM_BUILD_ROOT%{_includedir}/libzpool/abd*_os.h $RPM_BUILD_ROOT%{_includedir}/libzfs/sys
+rmdir $RPM_BUILD_ROOT%{_includedir}/libzpool
 
 %if %{with python3}
 cd contrib/pyzfs
@@ -496,6 +499,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zpool-checkpoint.8*
 %{_mandir}/man8/zpool-clear.8*
 %{_mandir}/man8/zpool-create.8*
+%{_mandir}/man8/zpool-ddtprune.8*
 %{_mandir}/man8/zpool-destroy.8*
 %{_mandir}/man8/zpool-detach.8*
 %{_mandir}/man8/zpool-events.8*
@@ -509,6 +513,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zpool-list.8*
 %{_mandir}/man8/zpool-offline.8*
 %{_mandir}/man8/zpool-online.8*
+%{_mandir}/man8/zpool-prefetch.8*
 %{_mandir}/man8/zpool-reguid.8*
 %{_mandir}/man8/zpool-remove.8*
 %{_mandir}/man8/zpool-reopen.8*
@@ -533,13 +538,13 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_libdir}/libuutil.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libuutil.so.3
 %attr(755,root,root) %{_libdir}/libzfs.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libzfs.so.4
+%attr(755,root,root) %ghost %{_libdir}/libzfs.so.6
 %attr(755,root,root) %{_libdir}/libzfs_core.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libzfs_core.so.3
 %attr(755,root,root) %{_libdir}/libzfsbootenv.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libzfsbootenv.so.1
 %attr(755,root,root) %{_libdir}/libzpool.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libzpool.so.5
+%attr(755,root,root) %ghost %{_libdir}/libzpool.so.6
 
 %files devel
 %defattr(644,root,root,755)
@@ -557,7 +562,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libzpool.la
 %{_includedir}/libspl
 %{_includedir}/libzfs
-%{_includedir}/libzpool
 %{_pkgconfigdir}/libzfs.pc
 %{_pkgconfigdir}/libzfs_core.pc
 %{_pkgconfigdir}/libzfsbootenv.pc
