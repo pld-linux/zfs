@@ -1,0 +1,29 @@
+From 906ced88df211bdeef9287f72a87661b0192e440 Mon Sep 17 00:00:00 2001
+From: Tony Hutter <hutter2@llnl.gov>
+Date: Wed, 28 May 2025 16:28:02 -0700
+Subject: [PATCH] Linux 6.15 compat: META
+
+Update the META file to reflect compatibility with the 6.15
+kernel.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Tony Hutter <hutter2@llnl.gov>
+Closes #17393
+---
+ META | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/META b/META
+index 6249d5ec2..47f0795bf 100644
+--- a/META
++++ b/META
+@@ -6,5 +6,5 @@ Release:       1
+ Release-Tags:  relext
+ License:       CDDL
+ Author:        OpenZFS
+-Linux-Maximum: 6.14
++Linux-Maximum: 6.15
+ Linux-Minimum: 4.18
+-- 
+2.49.0
+
