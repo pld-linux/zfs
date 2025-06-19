@@ -24,24 +24,19 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	2
+%define	rel	1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	2.3.2
+Version:	2.3.3
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	eef957a390e9c7641cd829827b0ce183
+# Source0-md5:	16f08cddc449c91e1ff757843c400cc0
 Patch0:		initdir.patch
 Patch1:		pld.patch
-Patch2:		0001-Linux-6.15-compat-META.patch
-Patch3:		0001-Linux-6.15-mkdir-now-returns-struct-dentry.patch
-Patch4:		0002-Linux-6.2-6.15-del_timer_sync-renamed-to-timer_delet.patch
-Patch5:		0001-cred-properly-pass-and-test-creds-on-other-threads-1.patch
-Patch6:		0001-Linux-build-silence-objtool-warnings.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -269,11 +264,6 @@ p=`pwd`\
 %setup -q -n %{pname}-%{version}
 %patch -P 0 -p1
 %patch -P 1 -p1
-%patch -P 2 -p1
-%patch -P 3 -p1
-%patch -P 4 -p1
-%patch -P 5 -p1
-%patch -P 6 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python3(\s|$),#!%{__python3}\1,' \
 	cmd/arc_summary
@@ -335,11 +325,6 @@ cp -a installed/* $RPM_BUILD_ROOT
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT \
 	DEFAULT_INIT_DIR=/etc/rc.d/init.d
-
-# these headers are used as <sys/abd_os.h> and <sys/abd_impl_os.h> from /usr/include/libzfs/sys/abd{,_impl}.h resp.
-# they don't refer to any functions in libzpool
-%{__mv} $RPM_BUILD_ROOT%{_includedir}/libzpool/abd*_os.h $RPM_BUILD_ROOT%{_includedir}/libzfs/sys
-rmdir $RPM_BUILD_ROOT%{_includedir}/libzpool
 
 %if %{with python3}
 cd contrib/pyzfs
