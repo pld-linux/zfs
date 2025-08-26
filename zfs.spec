@@ -29,12 +29,12 @@ exit 1
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	2.3.3
+Version:	2.3.4
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	16f08cddc449c91e1ff757843c400cc0
+# Source0-md5:	33be66d78e53ad63fcd7ed4ed7703cb7
 Patch0:		initdir.patch
 Patch1:		pld.patch
 URL:		https://zfsonlinux.org/
@@ -401,6 +401,7 @@ rm -rf $RPM_BUILD_ROOT
 %{systemdunitdir}/zfs-import-scan.service
 %{systemdunitdir}/zfs-load-key.service
 %{systemdunitdir}/zfs-mount.service
+%{systemdunitdir}/zfs-mount@.service
 %{systemdunitdir}/zfs-scrub@.service
 %{systemdunitdir}/zfs-scrub-monthly@.timer
 %{systemdunitdir}/zfs-scrub-weekly@.timer
@@ -471,6 +472,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/zfs-redact.8*
 %{_mandir}/man8/zfs-release.8*
 %{_mandir}/man8/zfs-rename.8*
+%{_mandir}/man8/zfs-rewrite.8*
 %{_mandir}/man8/zfs-rollback.8*
 %{_mandir}/man8/zfs-send.8*
 %{_mandir}/man8/zfs-set.8*
