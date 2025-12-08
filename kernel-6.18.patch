@@ -1,0 +1,9 @@
+--- zfs-2.3.4/META~	2025-08-25 22:57:18.000000000 +0200
++++ zfs-2.3.4/META	2025-10-05 00:32:44.599997606 +0200
+@@ -6,5 +6,5 @@
+ Release-Tags:  relext
+ License:       CDDL
+ Author:        OpenZFS
+-Linux-Maximum: 6.17
++Linux-Maximum: 6.18
+ Linux-Minimum: 4.18
