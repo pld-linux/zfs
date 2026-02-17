@@ -29,22 +29,17 @@ exit 1
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	2.3.5
+Version:	2.4.0
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	b80409d3de17ae0c74ed15a29e27c032
+# Source0-md5:	083322c0a7db7d09153c85af0219a70a
 Patch0:		initdir.patch
 Patch1:		pld.patch
-Patch2:		kernel-6.18.patch
-Patch3:		0002-Linux-6.18-replace-nth_page.patch
-Patch4:		0003-Linux-6.18-convert-ida_simple_-calls.patch
-Patch5:		0004-Linux-6.18-block_device_operations-getgeo-takes-stru.patch
-Patch6:		0005-Linux-6.18-replace-write_cache_pages.patch
-Patch7:		0006-Linux-6.18-namespace-type-moved-to-ns_common.patch
-Patch8:		0007-sha256_generic-make-internal-functions-a-little-more.patch
-Patch9:		0008-Linux-6.18-generic_drop_inode-and-generic_delete_ino.patch
+Patch2:		0001-Linux-6.19-replace-i_state-access-with-inode_state_r.patch
+Patch3:		0002-Linux-6.19-handle-werror-with-CONFIG_OBJTOOL_WERROR-.patch
+Patch4:		0003-Linux-6.19-compat-META.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -275,17 +270,12 @@ p=`pwd`\
 %patch -P2 -p1
 %patch -P3 -p1
 %patch -P4 -p1
-%patch -P5 -p1
-%patch -P6 -p1
-%patch -P7 -p1
-%patch -P8 -p1
-%patch -P9 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python3(\s|$),#!%{__python3}\1,' \
-	cmd/arc_summary
+	cmd/zarcsummary
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+@PYTHON_SHEBANG@(\s|$),#!%{__python3}\1,' \
-	cmd/arcstat.in \
+	cmd/zarcstat.in \
 	cmd/dbufstat.in \
 	cmd/zilstat.in
 
@@ -373,9 +363,9 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644,root,root,755)
 %doc AUTHORS COPYRIGHT LICENSE NEWS NOTICE README.md
 %attr(755,root,root) /sbin/mount.zfs
-%attr(755,root,root) %{_bindir}/arc_summary
-%attr(755,root,root) %{_bindir}/arcstat
 %attr(755,root,root) %{_bindir}/dbufstat
+%attr(755,root,root) %{_bindir}/zarcstat
+%attr(755,root,root) %{_bindir}/zarcsummary
 %attr(755,root,root) %{_bindir}/zilstat
 %attr(755,root,root) %{_bindir}/zvol_wait
 %attr(755,root,root) %{_sbindir}/fsck.zfs
@@ -445,7 +435,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/zfs/compatibility.d
 %{bash_compdir}/zfs
 %{bash_compdir}/zpool
-%{_mandir}/man1/arcstat.1*
+%{_mandir}/man1/zarcstat.1*
 %{_mandir}/man1/zhack.1*
 %{_mandir}/man1/ztest.1*
 %{_mandir}/man1/zvol_wait.1*
@@ -551,13 +541,13 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libuutil.so.*.*.*
 %ghost %{_libdir}/libuutil.so.3
 %{_libdir}/libzfs.so.*.*.*
-%ghost %{_libdir}/libzfs.so.6
+%ghost %{_libdir}/libzfs.so.7
 %{_libdir}/libzfs_core.so.*.*.*
 %ghost %{_libdir}/libzfs_core.so.3
 %{_libdir}/libzfsbootenv.so.*.*.*
 %ghost %{_libdir}/libzfsbootenv.so.1
 %{_libdir}/libzpool.so.*.*.*
-%ghost %{_libdir}/libzpool.so.6
+%ghost %{_libdir}/libzpool.so.7
 
 %files devel
 %defattr(644,root,root,755)

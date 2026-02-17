@@ -1,0 +1,30 @@
+From fdd70565cb205a617cd0803c11e0f0b07af567e2 Mon Sep 17 00:00:00 2001
+From: Tony Hutter <hutter2@llnl.gov>
+Date: Wed, 11 Feb 2026 09:37:02 -0800
+Subject: [PATCH 66/72] Linux 6.19 compat: META
+
+Update the META file to reflect compatibility with the 6.19
+kernel.
+
+Reviewed-by: Rob Norris <robn@despairlabs.com>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Tony Hutter <hutter2@llnl.gov>
+Closes #18197
+---
+ META | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/META b/META
+index 828d0c49e..260bd7e40 100644
+--- a/META
++++ b/META
+@@ -6,5 +6,5 @@ Release:       1
+ Release-Tags:  relext
+ License:       CDDL
+ Author:        OpenZFS
+-Linux-Maximum: 6.18
++Linux-Maximum: 6.19
+ Linux-Minimum: 4.18
+-- 
+2.53.0
+
