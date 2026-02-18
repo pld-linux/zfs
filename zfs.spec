@@ -43,6 +43,7 @@ Patch4:		0003-Linux-6.19-compat-META.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
+BuildRequires:	curl-devel
 BuildRequires:	libtool
 BuildRequires:	rpmbuild(macros) >= 2.030
 %if %{with kernel}
