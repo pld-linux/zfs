@@ -24,22 +24,19 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	2
+%define	rel	1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	2.4.0
+Version:	2.4.1
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	083322c0a7db7d09153c85af0219a70a
+# Source0-md5:	a1168e562f4ed00b74d2a16e86473684
 Patch0:		initdir.patch
 Patch1:		pld.patch
-Patch2:		0001-Linux-6.19-replace-i_state-access-with-inode_state_r.patch
-Patch3:		0002-Linux-6.19-handle-werror-with-CONFIG_OBJTOOL_WERROR-.patch
-Patch4:		0003-Linux-6.19-compat-META.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -268,9 +265,6 @@ p=`pwd`\
 %setup -q -n %{pname}-%{version}
 %patch -P0 -p1
 %patch -P1 -p1
-%patch -P2 -p1
-%patch -P3 -p1
-%patch -P4 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python3(\s|$),#!%{__python3}\1,' \
 	cmd/zarcsummary
