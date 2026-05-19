@@ -24,7 +24,7 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	1
+%define	rel	2
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
@@ -37,6 +37,7 @@ Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname
 # Source0-md5:	a585680cfca997601e5ac80af303c88a
 Patch0:		initdir.patch
 Patch1:		pld.patch
+Patch2:		0001-linux-zpl_super-handle-source-option-directly.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -194,7 +195,7 @@ ZFS Linux kernel headers common for all PLD kernel versions.
 ZFS - pliki nagłówkowe jądra Linuksa wspólne na wszystkich
 wersji jąder PLD.
 
-%define	kernel_pkg()\
+%define	kernel_pkg() \
 %package -n kernel%{_alt_kernel}-zfs\
 Summary:	ZFS Linux kernel modules\
 Summary(pl.UTF-8):	ZFS - moduły jądra Linuksa\
@@ -243,7 +244,7 @@ pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.\
 %depmod %{_kernel_ver}\
 %{nil}
 
-%define build_kernel_pkg()\
+%define build_kernel_pkg() \
 export KERNEL_MAKE="ARCH=%_kernel_arch" \\\
 %configure \\\
 	KERNEL_CC="%{__cc}" \\\
@@ -265,6 +266,7 @@ p=`pwd`\
 %setup -q -n %{pname}-%{version}
 %patch -P0 -p1
 %patch -P1 -p1
+%patch -P2 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python3(\s|$),#!%{__python3}\1,' \
 	cmd/zarcsummary
