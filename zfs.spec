@@ -24,27 +24,19 @@ exit 1
 
 %define		_duplicate_files_terminate_build	0
 
-%define	rel	2
+%define	rel	1
 %define	pname	zfs
 Summary:	Native Linux port of the ZFS filesystem
 Summary(pl.UTF-8):	Natywny linuksowy port systemu plików ZFS
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	2.4.1
+Version:	2.4.2
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	CDDL
 Group:		Applications/System
 Source0:	https://github.com/openzfs/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	a1168e562f4ed00b74d2a16e86473684
+# Source0-md5:	a585680cfca997601e5ac80af303c88a
 Patch0:		initdir.patch
 Patch1:		pld.patch
-Patch100:	0386-Linux-7.0-explicitly-set-setlease-handler-to-kernel-.patch
-Patch101:	0392-Linux-7.0-blk_queue_nonrot-renamed-to-blk_queue_rot.patch
-Patch102:	0393-Linux-7.0-posix_acl_to_xattr-now-allocates-memory.patch
-Patch103:	0394-Linux-7.0-add-shims-for-the-fs_context-based-mount-A.patch
-Patch104:	0463-Linux-7.0-also-set-setlease-handler-on-directories-1.patch
-Patch105:	0472-Linux-7.0-autoconf-Remove-copy-from-user-inatomic-AP.patch
-Patch106:	0478-Linux-7.0-ensure-LSMs-get-to-process-mount-options.patch
-Patch107:	0525-Linux-7.0-compat-META.patch
 URL:		https://zfsonlinux.org/
 BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
@@ -273,15 +265,6 @@ p=`pwd`\
 %setup -q -n %{pname}-%{version}
 %patch -P0 -p1
 %patch -P1 -p1
-
-%patch -P100 -p1
-%patch -P101 -p1
-%patch -P102 -p1
-%patch -P103 -p1
-%patch -P104 -p1
-%patch -P105 -p1
-%patch -P106 -p1
-%patch -P107 -p1
 
 %{__sed} -E -i -e '1s,#!\s*/usr/bin/env\s+python3(\s|$),#!%{__python3}\1,' \
 	cmd/zarcsummary
