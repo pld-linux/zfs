@@ -1,0 +1,11 @@
+--- zfs-2.4.4/config/user-libfetch.m4.orig	2026-08-21 22:46:48.810974565 +0200
++++ zfs-2.4.4/config/user-libfetch.m4	2026-08-31 14:46:12.176909894 +0200
+@@ -29,7 +29,7 @@
+ 		#include <sys/param.h>
+ 		#include <stdio.h>
+ 		#include <fetch.h>
+-	]], [fetchGetURL("", "");])], [
++	]], [FILE *f = fetchGetURL("", "");])], [
+ 		have_libfetch=1
+ 		LIBFETCH_IS_FETCH=1
+ 		LIBFETCH_DYNAMIC=1
